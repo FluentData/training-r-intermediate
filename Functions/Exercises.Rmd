@@ -1,0 +1,135 @@
+---
+title: 'Writing Functions: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Writing Functions](http://rpubs.com/NateByers/functionsApply) tutorial. 
+
+1. Write a function that checks if a value is above a threshold value.
+The function should have two parameters: `x` which is the numeric value
+to check, and `threshold` which is the numeric threshold. Have the 
+function return a logical value, `TRUE` if the value is above the 
+threshold and `FALSE` if it is equal to or below the threshold.
+
+[Solution](#ex1)
+
+2. Write a for loop that uses the function from the first exercise
+and checks each value in the random vector `rnorm(n = 10, mean = 35, sd = 10)`
+to see if it's above a threshold of 35.
+
+[Solution](#ex2)
+
+3. Use the function from the first exercise and the `sapply()` function to 
+find out how many days had an 8-hour ozone value above 0.075 ppm in the
+`chicago_air` dataset.
+
+[Solution](#ex3)
+
+4. Use the `mapply()` function to find out how many days had an 8-hour 
+ozone value above 0.075, how many days had a temperature above 90, and
+how many days had a solar radiation value above 1.25. (**Hint: You will have to
+write a new threshold function to use in the `mapply()` function).
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+Functions should have descriptive names that describe what the function 
+does. Long names are better than shorter, less descriptive names.
+
+```{r}
+checkAboveThreshold <- function(x, standard){
+  x > standard
+}
+
+checkAboveThreshold(x = 10, standard = 5)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+To make the answer reproducible, we set the seed so that the random numbers
+being generated can be recreated.
+
+```{r}
+set.seed(22)
+y <- rnorm(n = 10, mean = 35, sd = 10)
+y
+above_threshold <- c()
+for(i in 1:10){
+  above_threshold[i] <- checkAboveThreshold(x = y[i], standard = 35)
+}
+data.frame(y, above_threshold)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+
+```{r, warning=FALSE, message=FALSE}
+library(region5air)
+data(chicago_air)
+head(chicago_air)
+```
+
+Before we can use our function, we need to modify it to handle `NA`s.
+
+```{r}
+checkAboveThreshold <- function(x, standard){
+  if(is.na(x)){
+    FALSE
+  }else{
+    x > standard
+  }
+}
+```
+
+Now we can use our threshold function and take advantage of the fact that,
+in R, `TRUE` is equivalent to a numeric value of 1 and `FALSE` is equivalent
+to 0.
+
+```{r}
+violation <- sapply(chicago_air$ozone, checkAboveThreshold, standard = 0.075)
+head(violation)
+total_violations <- sum(violation)
+total_violations
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+First, we make our own table with a parameter column and the corresponding
+threshold.
+
+```{r}
+my_thresholds <- data.frame(parameter = c("ozone", "temp", "solar"),
+                            threshold = c(0.075, 90, 1.25),
+                            stringsAsFactors = FALSE)
+my_thresholds
+```
+
+Now we write a function that will take the two values in each row
+and find the sum of days above the threshold for that parameter.
+
+```{r}
+sumAboveThreshold <- function(values, threshold){
+  sum(sapply(values, checkAboveThreshold, standard = threshold))
+}
+```
+Now we feed `mapply()` our new function and use the `my_thresholds`
+data frame to feed the arguments.
+
+```{r}
+mapply(FUN = sumAboveThreshold, chicago_air[, my_thresholds$parameter],
+       my_thresholds$threshold)
+```
+
+[Back to exercises](#ex)

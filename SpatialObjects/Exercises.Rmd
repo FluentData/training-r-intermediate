@@ -1,0 +1,162 @@
+---
+title: 'Spatial Data Objects: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Spatial Data Objects](http://rpubs.com/NateByers/functionsApply) tutorial. 
+
+Use the following code to download 2014 daily SO~2~ data for the United States. This data will be used
+in the excercises.
+
+```{r, eval=FALSE}
+# create a temporary file
+temp <- tempfile()
+
+# download the .zip file to a temporary file--this will take several minutes
+download.file('http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/daily_42401_2014.zip', temp)
+
+# unzip temporary file to your working directory
+unzip(temp)
+
+# delete the temporary file
+unlink(temp)
+
+# read the data into R
+so2 <- read.csv('daily_42401_2014.csv', stringsAsFactors = FALSE)
+```
+
+```{r, echo=FALSE}
+so2 <- read.csv('daily_42401_2014.csv', stringsAsFactors = FALSE)
+```
+
+1. Use `dplyr` to summarize the `so2` data frame so that each monitor has
+one record with a column for the SO~2~ mean for the entire year. 
+
+[Solution](#ex1)
+
+2. Use the data frame created in the first exercise to create a 
+`SpatialPoints` object.
+
+[Solution](#ex2)
+
+3. Use the data frame and `SpatialPoints` object created in the 
+first two exercises to make a `SpatialPointsDataFrame`.
+
+[Solution](#ex3)
+
+4. Plot the `SpatialPointsDataFrame`.
+
+[Solution](#ex4)
+
+5. Plot the monitors that are in Region 5 (Illinois, Indiana, Michigan,
+Minnesota, Ohio, Wisconsin).
+
+[Solution](#ex5)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+as.tbl(so2)
+so2_mean <- group_by(so2, State.Code, County.Code, Site.Num, 
+                    Latitude, Longitude, Datum, State.Name, 
+                    County.Name, City.Name, CBSA.Name)
+so2_mean <- summarize(so2_mean, so2_mean = mean(Arithmetic.Mean, na.rm = TRUE))
+as.tbl(so2_mean)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+We need to make sure that there is one projection. 
+```{r, warning=FALSE, message=FALSE}
+unique(so2_mean$Datum)
+```
+
+We'll assume that "UNKNOWN" is actually "WGS84" and make three `SpatialPoints`
+objects.
+
+```{r, warning=FALSE, message=FALSE}
+library(sp)
+so2_wgs84 <- filter(so2_mean, Datum %in% c("WGS84", "UNKNOWN"))
+so2_nad83 <- filter(so2_mean, Datum == "NAD83")
+so2_nad27 <- filter(so2_mean, Datum == "NAD27")
+
+so2_wgs84_coords <- cbind(so2_wgs84$Longitude, so2_wgs84$Latitude)
+row.names(so2_wgs84_coords) <- paste0(so2_wgs84$State.Code, so2_wgs84$County.Code,
+                                      so2_wgs84$Site.Num)
+so2_nad83_coords <- cbind(so2_nad83$Longitude, so2_nad83$Latitude)
+row.names(so2_nad83_coords) <- paste0(so2_nad83$State.Code, so2_nad83$County.Code,
+                                      so2_nad83$Site.Num)
+so2_nad27_coords <- cbind(so2_nad27$Longitude, so2_nad27$Latitude)
+row.names(so2_nad27_coords) <- paste0(so2_nad27$State.Code, so2_nad27$County.Code,
+                                      so2_nad27$Site.Num)
+
+wgs84 <- CRS("+proj=longlat +ellpsWGS84")
+nad83 <- CRS("+proj=longlat +ellpsNAD83")
+nad27 <- CRS("+proj=longlat +ellpsNAD83")
+
+so2_wgs84_spoints <- SpatialPoints(coords = so2_wgs84_coords, proj4string = wgs84)
+so2_nad83_spoints <- SpatialPoints(coords = so2_nad83_coords, proj4string = nad83)
+so2_nad27_spoints <- SpatialPoints(coords = so2_nad27_coords, proj4string = nad27)
+```
+
+Now we transform all of the projections to WGS84 and combine them into
+one `SpatialPoints` object.
+
+```{r}
+so2_transformed <- spTransform(so2_nad83_spoints, CRSobj = wgs84)
+so2_spoints <- rbind(so2_wgs84_spoints, so2_transformed)
+so2_transformed <- spTransform(so2_nad27_spoints, CRSobj = wgs84)
+so2_spoints <- rbind(so2_spoints, so2_transformed)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+Make sure that the row names for the data frame are the same as the
+row names for the `SpatialPoints` object. Also, change the class
+back to `data.frame`.
+
+```{r}
+row.names(so2_mean) <- paste0(so2_mean$State.Code, so2_mean$County.Code,
+                              so2_mean$Site.Num)
+so2_mean <- as.data.frame(so2_mean)
+so2_spdf <- SpatialPointsDataFrame(so2_spoints, so2_mean, 
+                                  proj4string = wgs84,
+                                  match.ID = TRUE)
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+```{r, message=FALSE, warning=TRUE}
+library(maps)
+map(database = 'usa')
+plot(so2_spdf, pch = 19, add = TRUE)
+```
+
+[Back to exercises](#ex)
+
+### Solution 5 {#ex5}
+
+```{r, message=FALSE, warning=TRUE}
+map(database = 'state', regions = c("illinois", "indiana", "michigan",
+                                         "minnesota", "ohio", "wisconsin"))
+so2_region5_spdf <- so2_spdf[so2_spdf$State.Name %in%
+                                     c("Illinois", "Indiana", "Michigan",
+                                       "Minnesota", "Ohio", "Wisconsin"), ]
+plot(so2_region5_spdf, pch = 19, add = TRUE)
+```
+Huh. That's weird.
+
+[Back to exercises](#ex)

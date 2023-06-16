@@ -1,0 +1,93 @@
+---
+title: 'Data Manipulation Part 2: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Data Manipulation 2](http://rpubs.com/NateByers/datamanip2) tutorial. 
+
+1. Use the `mutate()` function to add two columns to the `chicago_air` dataset: a column named
+"violation" indicating when the ozone value is above 0.075 ppm and a column named
+"cumulative_total" that is the cumulative total of violations for the year. (*Hint: look at the `dplyr` vignette on window-functions.*) 
+
+[Solution](#ex1)
+
+2. Use the `gather()` function to reshape the `chicago_wind` data frame from a wide format
+to a long format.
+
+[Solution](#ex2)
+
+3. Use the `spread()` function to turn the long data frame from exercise 2 back into
+a wide data frame.
+
+[Solution](#ex3)
+
+4. Use the `summarize_each()` function to replace the `chicago_air` daily values with 
+monthly maximum values.
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+Here's a good first stab at a solution.
+
+```{r, message=FALSE, warning=FALSE}
+library(region5air)
+library(dplyr)
+
+data(chicago_air)
+ozone_violations <- mutate(chicago_air, violation = ozone > 0.075, 
+                           cumulative_total = cumsum(violation))
+
+```
+
+But the `ozone_violations` data frame gives `NA` values in the "cumulative_total"
+column at day 2013-07-01. This is because there are `NA` ozone values. We can solve
+this by removing rows with ozone `NA`s first.
+
+```{r}
+ozone_violations <- filter(chicago_air, !is.na(ozone))
+ozone_violations <- mutate(ozone_violations, 
+                           violation = ozone > 0.075, 
+                           cumulative_total = cumsum(violation))
+head(ozone_violations, 3)
+tail(ozone_violations, 3)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+```{r, message=FALSE, warning=FALSE}
+library(tidyr)
+data(chicago_wind)
+head(chicago_wind, 3)
+long_wind <- gather(chicago_wind, key = parameter, value = value,
+                    wind_speed:ozone, na.rm = TRUE)
+head(long_wind, 3)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+```{r}
+wide_wind <- spread(long_wind, key = parameter, value = value)
+head(wide_wind)
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+```{r}
+air_monthly <- group_by(chicago_air, month)
+air_monthly <- summarize_each(air_monthly, funs(max(., na.rm = TRUE)),
+                              -(weekday), -(date))
+air_monthly
+```
+
+[Back to exercises](#ex)

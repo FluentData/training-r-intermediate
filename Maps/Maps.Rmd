@@ -1,0 +1,129 @@
+---
+title: "Maps"
+output: html_document
+---
+
+In this tutorial we'll cover the following topics:
+
+* [Basic Maps](#basic)
+* [Google Maps](#google)
+* [Leaflet Maps](#leaflet)
+
+
+# Basic Maps {#basic}
+
+There is no function for displaying maps in the base R functionality. To display
+a simple map, we use the `maps` package. First, let's create a simple Indiana map.
+
+```{r, warning=FALSE, message=FALSE}
+library(maps)
+map(database = 'state', regions = 'indiana')
+```
+
+Now we can add a few monitors as points. Use the longitude column
+as the x-axis values and longitude for the y-axis values.
+
+```{r}
+monitors <- read.table(header=T, text='
+  monitorid        lat        long   datum                    name            
+          1   41.60668  -87.304729   WGS84              Gary-IITRI
+          2  39.811097	-86.114469   WGS84  Indpls-Washington-Park
+          3  39.749019	-86.186314   WGS84      Indpls-Harding-St.
+          4  38.013248	-87.577856   WGS84  Evansville-Buena-Vista
+          5  39.159383	-86.504762   WGS84             Bloomington
+          6  39.997484  -86.395172   WGS84              Whitestown
+                       ')
+```
+
+```{r, eval=FALSE}
+points(x = monitors$long, y = monitors$lat)
+```
+
+```{r, echo=FALSE}
+map(database = 'state', regions = 'indiana')
+points(x = monitors$long, y = monitors$lat)
+```
+
+We can jazz it up a bit by making it a county map and changing the symbol type and
+color.
+
+```{r}
+map(database = 'county', regions = 'indiana')
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+```
+
+We can also select specific counties to look at, and give the map a title.
+
+```{r}
+map(database = 'county', regions = c('indiana,marion', 'indiana,boone'))
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+title(main = "Air Monitor Locations")
+```
+
+If we want the counties to be automatically labeled, we use the `map.text` 
+function.
+
+```{r}
+map.text(database = 'county', regions = c('indiana,marion', 'indiana,boone'))
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+title(main = "Air Monitor Locations")
+```
+
+
+And if we want to label the monitors, we use the `text()` function.
+
+```{r}
+map(database = 'county', regions = c('indiana,marion', 'indiana,boone'))
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+title(main = "Air Monitor Locations")
+text(x = monitors$long, y = monitors$lat, labels = monitors$name, pos = 2)
+```
+
+
+
+# Google Maps {#google}
+
+
+To make interactive Google maps, we can use the `googleVis` package.
+
+```{r, warning=FALSE, message=FALSE}
+library(googleVis)
+```
+
+```{r, echo=FALSE}
+op <- options(gvis.plot.tag='chart')
+```
+
+We have to do some formatting first. The coordinates must be in the form `lat:long`
+so we need to create a data frame with a variable in that format.
+
+```{r, results='asis', tidy=FALSE}
+google.location <- paste(monitors$lat, monitors$long, sep = ":")
+monitors.google <- data.frame(monitors, google.location)
+g.inter.map <- gvisMap(data = monitors.google, locationvar = "google.location",
+                       tipvar = "name")
+plot(g.inter.map)
+```
+
+```{r, echo=FALSE}
+options(op)
+```
+
+
+# Leaflet Maps {#leaflet}
+
+
+Leaflet is another interactive map that can be created in R using the `leaflet`
+package.
+
+```{r, warning=FALSE}
+library(leaflet)
+m <- leaflet()
+m <- addTiles(m)
+m <- addMarkers(m, lng=monitors$long, lat=monitors$lat, 
+                popup=monitors$name)
+m
+```
+
+
+

@@ -1,0 +1,285 @@
+---
+title: 'Intro To Shiny'
+runtime: shiny
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Intro to Shiny](https://natebyers.shinyapps.io/IntroToShiny) tutorial. 
+
+1. If you have not already, create a folder called `ChicagoApp` in your
+working directory and place the `ui.R` and `server.R` scripts from the 
+tutorial in that folder. Use `runApp()` to open the application.
+
+[Solution](#ex1)
+
+2. Add a table of the data to the bottom of the application. Use
+`dataTableOutput()` in the `ui.R` script and `renderDataTable()`
+in the `server.r` script.
+
+[Solution](#ex2)
+
+3. Add a Leaflet map to the application with a marker at the location 
+of the monitor (latitude 42.14 and longitude -87.79923).
+
+[Solution](#ex3)
+
+4. Replace the `ggplot2` graph with a time series graph from the
+`dygraphs` package.
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+```{r, eval=FALSE}
+runApp("ChicagoApp")
+```
+
+```{r, echo=FALSE}
+shinyAppDir(
+  "MyApp",
+  options=list(
+    width="100%", height=550
+  )
+)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+`ui.R`
+```{r, eval=FALSE}
+library(shiny)
+
+# Define UI for application that plots time series
+shinyUI(fluidPage(
+
+  # Application title
+  titlePanel("Chicago Air"),
+
+  # Sidebar with a dropdown for selecting parameter
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("parameter",
+                  "Select Parameter:",
+                  "Ozone" = "ozone",
+                  "Temperature" = "temp",
+                  "Solar Radiation" = "solar")
+    ),
+
+    # Show a plot of the time series
+    mainPanel(
+      plotOutput("timePlot"),
+      dataTableOutput("dataTable")
+    )
+  )
+))
+```
+
+`server.R`
+
+```{r, eval=FALSE}
+
+library(shiny)
+library(region5air)
+data(chicago_air)
+chicago_air$date <- as.Date(chicago_air$date)
+
+  # Define server logic required to plot the time series
+shinyServer(function(input, output) {
+  
+  output$timePlot <- renderPlot({
+    ggplot(chicago_air, aes_string("date", input$parameter)) + geom_line() 
+  })
+  
+  output$dataTable <- renderDataTable({
+    chicago_air
+  })
+})
+```
+
+```{r, eval=FALSE}
+runApp("ChicagoApp")
+```
+
+```{r, echo=FALSE}
+shinyAppDir(
+  "MyApp2",
+  options=list(
+    width="100%", height=1600
+  )
+)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+`ui.R`
+
+```{r, eval=FALSE}
+library(shiny)
+library(leaflet)
+
+# Define UI for application that plots time series
+shinyUI(fluidPage(
+
+  # Application title
+  titlePanel("Chicago Air"),
+
+  # Sidebar with a dropdown for selecting parameter
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("parameter",
+                  "Select Parameter:",
+                  "Ozone" = "ozone",
+                  "Temperature" = "temp",
+                  "Solar Radiation" = "solar"),
+      leafletOutput("mymap")
+    ),
+
+    # Show a plot of the time series
+    mainPanel(
+      plotOutput("timePlot"),
+      dataTableOutput("dataTable")
+    )
+  )
+))
+```
+
+`server.R`
+
+```{r, eval=FALSE}
+
+library(shiny)
+library(region5air)
+library(leaflet)
+data(chicago_air)
+chicago_air$date <- as.Date(chicago_air$date)
+
+  # Define server logic required to plot the time series
+shinyServer(function(input, output) {
+  
+  output$timePlot <- renderPlot({
+    ggplot(chicago_air, aes_string("date", input$parameter)) + geom_line() 
+  })
+  
+  output$dataTable <- renderDataTable({
+    chicago_air
+  })
+  
+  output$mymap <- renderLeaflet({
+    library(leaflet)
+    m <- leaflet()
+    m <- addTiles(m)
+    m <- addMarkers(m, lng=-87.79923, lat=42.14)
+    setView(m, lng=-87.79923, lat=42.14, zoom = 10)
+  })
+})
+```
+
+```{r, eval=FALSE}
+runApp("ChicagoApp")
+```
+
+```{r, echo=FALSE}
+shinyAppDir(
+  "MyApp3",
+  options=list(
+    width="100%", height=1600
+  )
+)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+`ui.R`
+
+```{r, eval=FALSE}
+library(shiny)
+library(leaflet)
+library(dygraphs)
+
+# Define UI for application that plots time series
+shinyUI(fluidPage(
+
+  # Application title
+  titlePanel("Chicago Air"),
+
+  # Sidebar with a dropdown for selecting parameter
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("parameter",
+                  "Select Parameter:",
+                  "Ozone" = "ozone",
+                  "Temperature" = "temp",
+                  "Solar Radiation" = "solar"),
+      leafletOutput("mymap")
+    ),
+
+    # Show a plot of the time series
+    mainPanel(
+      plotOutput("dygraph"),
+      dataTableOutput("dataTable")
+    )
+  )
+))
+```
+
+`server.R`
+
+```{r, eval=FALSE}
+
+library(shiny)
+library(region5air)
+library(leaflet)
+library(dygraphs)
+data(chicago_air)
+chicago_air$date <- as.Date(chicago_air$date)
+chicago_dy <- chicago_air[, c("ozone", "temp", "solar")]
+rownames(chicago_dy) <- chicago_air$date
+
+  # Define server logic required to plot the time series
+shinyServer(function(input, output) {
+  
+  output$dygraph <- renderDygraph({
+    dygraph(chicago_dy[, input$parameter])
+  })
+  
+  output$dataTable <- renderDataTable({
+    chicago_air
+  })
+  
+  output$mymap <- renderLeaflet({
+    library(leaflet)
+    m <- leaflet()
+    m <- addTiles(m)
+    m <- addMarkers(m, lng=-87.79923, lat=42.14)
+    setView(m, lng=-87.79923, lat=42.14, zoom = 10)
+  })
+})
+```
+
+```{r, eval=FALSE}
+runApp("ChicagoApp")
+```
+
+```{r, echo=FALSE}
+shinyAppDir(
+  "MyApp4",
+  options=list(
+    width="100%", height=1600
+  )
+)
+```
+
+
+[Back to exercises](#ex)

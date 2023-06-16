@@ -1,0 +1,42 @@
+---
+title: 'Spatial Data Objects: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Spatial Data Objects](http://rpubs.com/NateByers/functionsApply) tutorial. 
+
+1. 
+
+[Solution](#ex1)
+
+2. 
+
+[Solution](#ex2)
+
+3. 
+
+[Solution](#ex3)
+
+4. 
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+[Back to exercises](#ex)

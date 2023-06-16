@@ -1,0 +1,140 @@
+---
+title: 'Maps: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Maps](http://rpubs.com/NateByers/maps) tutorial. 
+
+Use the following code to download 2014 daily No~2~ data for the United States. 
+This data will be used in the excercises.
+
+```{r, eval=FALSE}
+# create a temporary file
+temp <- tempfile()
+
+# download the .zip file to a temporary file--this will take several minutes
+download.file('http://aqsdr1.epa.gov/aqsweb/aqstmp/airdata/daily_42602_2014.zip', temp)
+
+# unzip temporary file to your working directory
+unzip(temp)
+
+# delete the temporary file
+unlink(temp)
+
+# read the data into R
+no2 <- read.csv('daily_42602_2014.csv', stringsAsFactors = FALSE)
+```
+
+```{r, echo=FALSE}
+no2 <- read.csv('daily_42602_2014.csv', stringsAsFactors = FALSE)
+```
+
+1. Use `dplyr` to summarize the `no2` data frame so that each monitor has
+one record with a column for the NO~2~ mean for the entire year and a column
+for the standard deviation. 
+
+[Solution](#ex1)
+
+2. Use the data frame created in the first exercise to create a 
+map of the monitors (use `map()` and `points()`).
+
+[Solution](#ex2)
+
+3. Use the data frame created in the first exercise and subset
+it down to monitors in Ohio. Plot those monitors on a map and
+label them with the "City.Name" column.
+
+[Solution](#ex3)
+
+4. Use `googleVis` to make a Google map of the Ohio monitors.
+
+[Solution](#ex4)
+
+5. Use `leaflet` to make a Leaflet map of the Ohio monitors.
+
+[Solution](#ex5)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+
+```{r, warning=FALSE, message=FALSE}
+library(dplyr)
+as.tbl(no2)
+# filter out days with less than 75% valid hours
+no2 <- filter(no2, Observation.Percent >= 75)
+no2_annual <- group_by(no2, State.Code, County.Code, Site.Num, 
+                    Latitude, Longitude, Datum, State.Name, 
+                    County.Name, City.Name, CBSA.Name)
+no2_annual <- summarize(no2_annual, no2_mean = mean(Arithmetic.Mean, na.rm = TRUE),
+                        no2_sd = sd(Arithmetic.Mean, na.rm = TRUE))
+as.tbl(no2_annual)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+```{r, message=FALSE, warning=FALSE}
+library(maps)
+map(database = 'usa')
+points(x = no2_annual$Longitude, y = no2_annual$Latitude,pch = 19)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+```{r}
+ohio <- filter(no2_annual, State.Name == "Ohio")
+map(database = 'state', regions = "ohio")
+points(x = ohio$Longitude, y = ohio$Latitude,pch = 19)
+title(main = "Ohio NO2 Monitor Locations")
+text(x = ohio$Longitude, y = ohio$Latitude, labels = ohio$City.Name, pos = 4)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+```{r, warning=FALSE, message=FALSE}
+library(googleVis)
+```
+
+```{r, echo=FALSE}
+op <- options(gvis.plot.tag='chart')
+```
+
+```{r, results='asis', tidy=FALSE}
+ohio$google.location <- paste(ohio$Latitude, ohio$Longitude, sep = ":")
+# here I create a more informative label
+ohio$label <- paste("NO2 Annual Mean:", round(ohio$no2_mean, 3))
+g.inter.map <- gvisMap(data = ohio, locationvar = "google.location",
+                       tipvar = "label")
+plot(g.inter.map)
+```
+
+```{r, echo=FALSE}
+options(op)
+```
+
+
+[Back to exercises](#ex)
+
+### Solution 5 {#ex5}
+
+```{r, warning=FALSE}
+library(leaflet)
+m <- leaflet()
+m <- addTiles(m)
+m <- addMarkers(m, lng=ohio$Longitude, lat=ohio$Latitude, 
+                popup=ohio$label)
+m
+```
+
+
+[Back to exercises](#ex)

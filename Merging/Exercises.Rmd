@@ -1,0 +1,119 @@
+---
+title: 'Merging: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Merging](http://rpubs.com/NateByers/merging) tutorial. 
+
+1. Use the `merge()` function to merge `airdata` with the AQS units table found at 
+https://aqs.epa.gov/aqsweb/codes/data/Units.csv.
+
+[Solution](#ex1)
+
+2. Do the same merge described in Exercise 1 but use the `dplyr` function `inner_join()`.
+
+[Solution](#ex2)
+
+3. Subset the AQS State and County code table (https://aqs.epa.gov/aqsweb/codes/data/StateCountyCodes.csv) 
+down to just the counties that have monitors in `airdata` using the
+`semi_join()` function.
+
+[Solution](#ex3)
+
+4. Subset the AQS Criteria table (https://aqs.epa.gov/aqsweb/codes/data/Parameters-CRITERIA.csv)
+down to parameters that are *not* in `airdata` using the `anti_join()` function.
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+```{r, warning=FALSE, message=FALSE}
+library(region5air)
+library(dplyr)
+data(airdata)
+as.tbl(airdata)
+```
+
+```{r, eval=FALSE}
+aqs_units <- read.csv("https://aqs.epa.gov/aqsweb/codes/data/Units.csv",
+                      skip = 1, stringsAsFactors = FALSE)
+head(aqs_units)
+```
+
+```{r, echo=FALSE}
+aqs_units <- read.csv("units.csv", stringsAsFactors = FALSE)
+head(aqs_units)
+```
+
+```{r}
+air <- merge(airdata, aqs_units, by.x = "unit", by.y = "Unit")
+as.tbl(air)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+```{r, message=FALSE, warning=FALSE}
+air <- inner_join(airdata, aqs_units, by = c("unit" = "Unit"))
+as.tbl(air)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+```{r, eval=FALSE}
+aqs_counties <- read.csv("https://aqs.epa.gov/aqsweb/codes/data/StateCountyCodes.csv",
+                       skip = 1, stringsAsFactors = FALSE)
+as.tbl(aqs_counties)
+```
+
+```{r, echo=FALSE}
+aqs_counties <- read.csv("states.csv", stringsAsFactors = FALSE)
+as.tbl(aqs_counties)
+```
+
+```{r}
+airdata$State.Code <- substr(airdata$site, 4, 5)
+airdata$County.Code <- as.integer(substr(airdata$site, 6, 8))
+my_counties <- semi_join(aqs_counties, airdata)
+my_counties
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+First we read in the AQS table and narrow it down to just a few unique columns
+
+```{r, eval=FALSE}
+aqs_criteria <- read.csv("https://aqs.epa.gov/aqsweb/codes/data/Parameters-CRITERIA.csv",
+                       skip = 1, stringsAsFactors = FALSE)
+as.tbl(aqs_criteria)
+```
+
+```{r, echo=FALSE}
+aqs_criteria <- read.csv("criteria.csv", stringsAsFactors = FALSE)
+as.tbl(aqs_criteria)
+```
+
+```{r}
+aqs_criteria <- distinct(select(aqs_criteria, Parameter.Code, 
+                                Parameter.Desc, Duration.Desc))
+as.tbl(aqs_criteria)
+```
+
+Now we filter down to rows with parameters that are not in `airdata`.
+
+```{r}
+missing_criteria <- anti_join(aqs_criteria, airdata, 
+                              by = c("Parameter.Code" = "parameter"))
+missing_criteria
+```
+
+[Back to exercises](#ex)

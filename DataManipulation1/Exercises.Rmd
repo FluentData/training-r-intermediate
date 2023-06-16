@@ -1,0 +1,153 @@
+---
+title: 'Data Manipulation Part 1: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Data Manipulation 1](http://rpubs.com/NateByers/datamanip1) tutorial. 
+
+1. From `airdata`, use `select()` to create a `monitors` data frame with columns "site", "lat", "lon", and "GISDatum".
+
+[Solution](#ex1)
+
+2. From `airdata`, use `arrange()` to order `airdata` by site then by parameter then by date/time.
+
+[Solution](#ex2)
+
+3. From `airdata`, use `filter()` to create a data frame of PM~2.5~ measurements (AQS code 88101) from site 840180890022 with hourly values above 35 ug/m^3^.
+
+[Solution](#ex3)
+
+4. From `chicago_air`, create a data frame with readings between July 1 and July 31 where temperature
+values were at or above 90 degrees Fahrenheit.
+
+[Solution](#ex4)
+
+5. From `airdata`, find the daily maximum 1-hour value for all ozone monitors.
+
+[Solution](#ex5)
+
+## Solutions
+
+### Solution 1{#ex1}
+```{r, message=FALSE, warning=FALSE}
+library(region5air)
+library(dplyr)
+
+data(airdata)
+monitors <- select(airdata, site, lat, lon, GISDatum)
+head(monitors)
+```
+Or equivalently,
+```{r}
+monitors <- select(airdata, site, lat:GISDatum)
+```
+
+This returns a very long data frame with many duplicate values. You can use the `distinct()` function
+from `dplyr` to remove the duplicated rows.
+
+```{r}
+dim(monitors)
+monitors <- distinct(monitors)
+dim(monitors)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+```{r}
+as.tbl(airdata)
+airdata <- arrange(airdata, site, parameter, datetime)
+as.tbl(airdata)
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+If we look at the classes of the columns we can see that site is character but parameter and value are
+numeric. 
+
+```{r}
+as.tbl(airdata)
+```
+
+So we filter site using a string (i.e. put quotes around the numerals) instead of a number, 
+but for parameter and poc we use numeric values.
+
+```{r}
+my_pm <- filter(airdata, site == "840181270024", parameter == 88101, value > 35)
+as.tbl(my_pm)
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+If we want to filter using date ranges, we need to make sure that date values are one of the
+date classes. In the `chicago_air` the date column is the character class, not a date class.
+
+```{r}
+data(chicago_air)
+as.tbl(chicago_air)
+```
+
+We can covert it to the Date class.
+
+```{r}
+chicago_air$date <- as.Date(chicago_air$date)
+```
+
+Now we can filter using dates.
+
+```{r}
+filter(chicago_air, date >= as.Date("2013-07-01"), date <= as.Date("2013-07-30"),
+       temp >= 90)
+```
+
+Or we can simply filter on the month of July,
+
+```{r}
+filter(chicago_air, month == 7, temp >= 90)
+```
+
+[Back to exercises](#ex)
+
+### Solution 5 {#ex5}
+
+First we filter down to ozone values and look at how many monitors there are and if there
+is more than one poc value for any monitor.
+
+```{r}
+chicago_o3 <- filter(airdata, parameter == 44201)
+table(select(chicago_o3, site, poc))
+```
+
+There are 23 sites and only one poc value per site, so we don't have to worry about more than one
+value per site/hour. We can simply group by site and date.
+
+```{r}
+# first make date column
+chicago_o3$date <- substr(chicago_o3$datetime, 1, 8)
+chicago_o3 <- group_by(chicago_o3, site, date)
+```
+
+If we did have sites that had more than one poc per site/hour, we could filter on the poc by grouping
+on the hour. We could do this for the whole `airdata` dataset this way:
+
+```{r, eval=FALSE}
+lowest_poc <- group_by(airdata, site, datetime, parameter)
+lowest_poc <- filter(lowest_poc, poc == min(poc))
+```
+
+Now we can summarize the `chicago_o3` data frame by finding the maximum 1-hour value for
+each day.
+
+```{r}
+chicago_o3 <- summarize(chicago_o3, o3_1hr_max = max(value, na.rm = TRUE))
+as.tbl(chicago_o3)
+```
+
+[Back to exercises](#ex)

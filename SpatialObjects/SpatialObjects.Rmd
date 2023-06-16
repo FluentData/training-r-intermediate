@@ -1,0 +1,248 @@
+---
+title: "Spatial Data Objects"
+output: html_document
+---
+
+Many R packages have been developed to visualize and analyze spatial data. The best 
+comprehensive resource that I've found on this topic is the book
+[Applied Spatial Data Analysis with R](http://www.amazon.com/Applied-Spatial-Data-Analysis-Use/dp/1461476178). This tutorial relies heavily on that book.
+
+- [The sp package](#sp)
+- [Spatial objects](#Spatial)
+- [SpatialPoints objects](#SpatialPoints)
+- [SpatialPointsDataFrame objects](#SpatialPointsDataFrame)
+- [Plotting](#plotting)
+
+# The `sp` package and `Spatial*` objects {#sp}
+
+Object oriented programming provides a framework for storing spatial information, 
+along with information associated with spatial data, in self-contained and stable
+data objects. These objects can then be easily fed into functions that can vizualize
+and analyze the contents of the object. 
+
+The `sp` package is a foundational package for dealing with spatial data. It provides classes and methods for making S4 objects in R. (For an explanation of S4 objects, see Hadley Wickham's page on object oriented programming in 
+[Advanced R](http://adv-r.had.co.nz/OO-essentials.html)). 
+
+
+## `Spatial` {#Spatial}
+
+The most basic object that can be created with the `sp` package is the `Spatial` object. 
+This object just contains information for a boundary box and the coordinate system. 
+
+Let's create a boundary box in the Chicago area. We'll use the constructor function that 
+has the same name as the class, `Spatial()`. The two arguments are `bbox` and `proj4string`. The `bbox` argument is for the bounding box. It takes a matrix with at least two rows, and 
+the column names must be `min` and `max`. The first row contains the eastings (x-axis, or the longitude) and the second row contains the northings (y-axis, or latitude). 
+
+
+```{r}
+# create a boundary box
+longitudes <- c(-88.156775, -87.589771)
+latitudes <- c(41.652208, 42.154143)
+bounding_box <- matrix(c(longitudes, latitudes), nrow = 2, byrow = TRUE,
+                       dimnames = list(NULL, c("min", "max")))
+bounding_box
+```
+
+The second argument, `proj4string`, takes a string that specifies which projection
+the coordinates are in. See the [`proj4` package](https://cran.r-project.org/web/packages/proj4/) 
+for details on which strings to use. The simplest string is "+proj=longlat".
+
+```{r}
+projection <- "+proj=longlat" 
+```
+
+Now we can create the `Spatial` object. (The projection string must be wrapped in the 
+`CRS()` function).
+
+```{r, message=FALSE, warning=FALSE}
+library(sp)
+chicago_sp <- Spatial(bbox = bounding_box, proj4string = CRS(projection))
+chicago_sp
+```
+
+## `SpatialPoints` {#SpatialPoints}
+
+A `Spatial` object isn't much good by itself, but it's the base object that other 
+sub-classes are built on. To see the list of sub-classes, use the `getClass()` function.
+
+```{r}
+getClass("Spatial")
+```
+
+A sub-class is a class whose objects contain all of the information in the parent class,
+plus additional information. For our purposes, the most useful direct sub-class of `Spatial`
+is `SpatialPoints`. Typically we will want to look at monitor locations (i.e. points), 
+so we need to represent those as points in a `SpatialPoints` object. We'll use the `airdata` dataset from the `region5air` package.
+
+```{r, message=FALSE, warning=FALSE}
+library(region5air)
+library(dplyr)
+data(airdata)
+as.tbl(airdata)
+```
+
+Before we can create a `SpatialPoints` object, we need to know what projection the coordinates
+are in.
+
+```{r}
+unique(airdata$GISDatum)
+```
+
+There are two projections, so we will split up the data, then later we will merge them by transforming one projection into another.
+
+```{r}
+air_wgs84 <- filter(airdata, GISDatum == "WGS84")
+air_nad83 <- filter(airdata, GISDatum == "NAD83")
+```
+
+The `SpatialPoints()` function has the same parameters as the `Spatial` function, except it
+also takes a matrix of coorinates for points. The matrix must have unique row names, eastings 
+must be in the first column, and northings must be in the second column. Here we create the
+coordinate matrices.
+
+```{r}
+air_wgs84_monitors <- unique(select(air_wgs84, site, lat, lon))
+air_wgs84_coords <- cbind(air_wgs84_monitors$lon, air_wgs84_monitors$lat)
+row.names(air_wgs84_coords) <- air_wgs84_monitors$site
+head(air_wgs84_coords, 3)
+
+air_nad83_monitors <- unique(select(air_nad83, site, lat, lon))
+air_nad83_coords <- cbind(air_nad83_monitors$lon, air_nad83_monitors$lat)
+row.names(air_nad83_coords) <- air_nad83_monitors$site
+air_nad83_coords
+```
+
+Now we specify the projections.
+
+```{r}
+wgs84 <- CRS("+proj=longlat +ellpsWGS84")
+nad83 <- CRS("+proj=longlat +ellpsNAD83")
+```
+
+When we create the `SpatialPoints` object, if we don't specify the bounding box it will automatically be created, based on the extreme locations in the coordinate matrix.
+
+```{r}
+air_wgs84_spoints <- SpatialPoints(coords = air_wgs84_coords, proj4string = wgs84)
+air_nad83_spoints <- SpatialPoints(coords = air_nad83_coords, proj4string = nad83)
+```
+
+We can look at the bounding boxes by using the `bbox()` function.
+
+```{r}
+bbox(air_wgs84_spoints)
+bbox(air_nad83_spoints)
+```
+
+`spTransform()` will transform a `Spatial*` object from one coordinate reference system (CRS)
+to another. Here we change the object with the NAD83 projection to WGS84 and recombine
+with the other `SpatialPoints` object.
+
+```{r}
+# you must have the rgdal package installed
+air_spoints <- spTransform(air_nad83_spoints, CRSobj = wgs84)
+air_spoints <- rbind(air_spoints, air_wgs84_spoints)
+```
+
+Let's look at the bounding box now.
+
+```{r}
+bbox(air_spoints)
+```
+
+
+## `SpatialPointsDataFrame` {#SpatialPointsDataFrame}
+
+In many cases, you will not just want to plot locations of monitors on a map, but you will
+want to have data associated with each point. The `SpatialPointsDataFrame` object contains
+all of the information that a `SpatialPoints` object has, but it also contains a data frame
+of values associated with the coordinate points.
+
+The way the spatial points and the data frames are connected is by row names. For example, 
+if the the row name is "A" for monitor "1", then the row name in the data frame must be "A"
+for records that contain information about that monitor.
+
+```{r}
+monitor_locations <- cbind(1:5, 1:5)
+row.names(monitor_locations) <- LETTERS[1:5]
+monitor_locations
+
+monitor_info <- data.frame(monitor = paste0("monitor", 1:5), 
+                           pollutant = c(rep("o3", 3), rep("pm2.5", 2)),
+                           row.names = LETTERS[1:5])
+monitor_info
+```
+
+When we use `SpatialPointsDataFrame()` we feed it the points matrix, the data 
+frame, we specify the projection, and we set `match.ID = TRUE`.
+
+```{r}
+my_spdf <- SpatialPointsDataFrame(monitor_locations, monitor_info, 
+                                  proj4string = CRS("+proj=longlat"),
+                                  match.ID = TRUE)
+my_spdf
+```
+
+Since we have already created a `SpatialPoints` object from the monitors in `airdata`, 
+we can use that as our monitor matrix. The row names of that object are actually the 
+monitor site codes.
+
+```{r}
+head(air_spoints, 3)
+```
+
+So we can create a data frame with information about each monitor in `airdata`, give
+row names to that data frame that correspond to the `SpatialPoints` object, then create
+the `SpatialPointsDataFrame` object.
+
+```{r, warning=FALSE}
+# select a few columns with useful information
+airdata$parameter <- factor(airdata$parameter, levels = c(44201, 88101, 62101),
+                            labels = c("ozone", "pm2.5", "temp"))
+air_monitors_df <- unique(airdata[, c("site", "parameter")])
+air_monitors_df$value <- "yes"
+head(air_monitors_df, 3)
+
+library(tidyr)
+air_monitors_df <- spread(air_monitors_df, parameter, value, fill = "no")
+row.names(air_monitors_df) <- air_monitors_df$site
+head(air_monitors_df, 3)
+
+air_spdf <- SpatialPointsDataFrame(air_spoints, air_monitors_df, 
+                                   proj4string = wgs84, match.ID = TRUE)
+head(air_spdf, 3)
+```
+
+# Plotting {#plotting}
+
+Plotting `Spatial*` objects is relatively easy. Methods have been created for most plotting
+functions in R.
+
+Here, we plot the `SpatialPoints` object we created, using the monitors in `airdata`.
+
+```{r, warning=FALSE}
+library(maps)
+m <- map(database = 'county', regions = c('illinois,cook', 'illinois,lake', 'illinois,du page',
+                                     'illinois,kane', 'illinois,mchenry', 'indiana,lake',
+                                    'indiana,porter',  'wisconsin,kenosha'))
+plot(air_spoints, pch = 19, add = TRUE)
+```
+
+We can subset the `SpatialPointsDataFrame` to just plot the monitors that measure
+ozone.
+
+```{r}
+map(m)
+plot(air_spdf[air_spdf$ozone == "yes", ], pch = 19, col = "blue", add = TRUE)
+```
+
+Then we can add PM2.5 monitors to the map.
+
+```{r, eval=FALSE}
+plot(air_spdf[air_spdf$pm2.5 == "yes", ], pch = 19, col = "red", add = TRUE)
+```
+
+```{r, echo=FALSE}
+map(m)
+plot(air_spdf[air_spdf$ozone == "yes", ], pch = 19, col = "blue", add = TRUE)
+plot(air_spdf[air_spdf$pm2.5 == "yes", ], pch = 19, col = "red", add = TRUE)
+```

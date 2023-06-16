@@ -1,0 +1,157 @@
+---
+title: 'Data Manipulation Part 1: dplyr'
+output: html_document
+---
+
+`dplyr` is an [R package](https://cran.r-project.org/web/packages/dplyr/index.html) written
+by [Hadley Wickham](http://had.co.nz/). It makes data manipulation of data frames easier and quicker.
+
+This tutorial will cover the following functions in the `dplyr` package:
+
+- [select()](#select), selecting columns
+- [arrange()](#arrange), reordering rows
+- [filter()](#filter), filtering rows
+- [summarise()](#summarise), summarizing rows
+
+We will be using the `airdata` dataset from the `region5air` package.
+
+```{r}
+library(region5air)
+data(airdata)
+```
+
+For each function we will review how to accomplish the task in base R, then see
+how the dplyr function accomplishes the same task.
+
+# Select columns with select() {#select}
+
+If we wanted to select a few columns from `airdata`, we would need to either use numbers or 
+names. Suppose we just wanted the site, time, parameter, and value:
+
+```{r}
+b <- airdata[, c("site", "datetime", "parameter", "value")]
+
+# equivalently
+# b <- airdata[, c(1, 4, 5, 8)]
+
+head(b, 3)
+```
+
+With the `select()` function, you don't need to put the columns in quotes.
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+d <- select(airdata, site, datetime, parameter, value)
+head(d, 3)
+```
+
+You can also select consective columns by separating the first column and the last column with 
+a colon.
+
+```{r}
+# in base R
+b <- airdata[, c(1, 4:8)]
+head(b, 3)
+
+d <- select(airdata, site, datetime:value)
+head(d, 3)
+```
+
+# Arrange rows with arrange() {#arrange}
+
+If we wanted to arrange `airdata` by first ordering by parameter then odering chronologically,
+this is how we would do it in base R.
+
+```{r, eval=FALSE}
+airdata <- airdata[order(airdata$parameter, airdata$datetime), ]
+```
+
+The `arrange()` function in `dplyr` allows you to order a data frame by just adding the column 
+names as parmeters. Use `desc()` to arrange in descending order.
+
+```{r, eval=FALSE}
+airdata <- arrange(airdata, desc(parameter), datetime)
+```
+
+# Filter rows with filter() {#filter}
+
+To filter a data frame we need to use a logical vector. For example, if we wanted to filter `airdata` by
+pollutant and POC, we would do something like this in base R.
+
+```{r}
+b <- airdata[airdata$parameter  == 62101 & airdata$poc == 1, ]
+dim(b)
+```
+
+The `filter()` function in `dplyr` takes logical expressions as parameters (commas are equivalent to
+`&`).
+
+```{r}
+d <- filter(airdata, parameter == 62101, poc == 1)
+dim(d)
+```
+
+# summarise rows with group_by() and summarise() {#summarise}
+
+Suppose we want to summarise the value for each day in `airdata`. We can use the `substr()`
+function to grab the first 8 characters of the "datetime" column. The `start` and `stop`
+parameters are used to indicate which character is the starting position and which
+is the stopping position.
+
+```{r}
+# for example
+substr("20150101 00:00:00", start = 1, stop = 8)
+```
+
+We'll add a "date" column to `airdata`.
+
+```{r}
+airdata$date <- substr(airdata$datetime, 1, 8)
+```
+
+In base R, we can summarise the mean of each day by using the `tapply()` function (see `?tapply()`). Let's find the daily mean for a given site and a given parameter.
+
+```{r}
+ozone_site_A <- airdata[airdata$site == 840170311601 & airdata$parameter == 44201, ]
+daily_mean <- tapply(ozone_site_A$value, ozone_site_A$date, mean, na.rm = TRUE)
+head(daily_mean, 3)
+```
+
+To use `tapply()` you work with vectors. You have to supply the vector you want to apply the `mean()` function to (`ozone_site_A$value`), and you supply the vector that will be a factor for aggregation (`ozone_site_A$date`). 
+
+`dplyr` accomplishes this task by allowing you to use data frames and their column names. The first step is to use the `group_by()` function to pick the columns that will be factors (groups will be created by
+the levels of these columns).
+
+```{r}
+d_daily_mean <- group_by(airdata, site, parameter, date)
+```
+
+The `summarise()` function will split up the column by grouping together cells that have
+common factor levels in the site, parameter, and date columns.
+
+```{r}
+d_daily_mean <- summarise(d_daily_mean, daily_mean = mean(value, na.rm = FALSE))
+head(d_daily_mean, 3)
+```
+
+The resulting [data frame](#classes) has just three columns: site, parameter, date, and daily_mean.
+Instead of limitting yourself to just one site and one parameter before calculating the daily mean,
+`summarise()` allows you to take all of the grouping information from the `group_by` function and
+calculate all of the daily values for each site and parameter.
+
+```{r}
+table(d_daily_mean[, c("site", "parameter")])
+```
+
+
+# `dplyr` classes {#classes}
+
+The output of some `dplyr` functions aren't always strictly a `data.frame`. For instance, the output of the `group_by` function is an object with the following classes: `grouped_df`, `tbl_df`, `tbl`, and `data.frame`. This is something to be aware of, if you find your `dplyr` output won't behave the way
+a `data.frame` normally should.
+
+# Additional comments on `dplyr` 
+
+- Some functions don't appear to be that much easier to use than base R (like `select()` or `arrange()`). But `dplyr` provides a suite of functions _with the same syntax_ so that you can easily remember them. 
+- `dplyr` is fast.
+- You can use `dplyr` with databases.
+

@@ -1,0 +1,111 @@
+---
+title: 'Plotting with openair: Exercises'
+output: html_document
+---
+
+## Exercises {#ex}
+
+These exercises accompany the [Plotting with `openair`](http://rpubs.com/NateByers/openair) tutorial. 
+
+1. Use the `summaryPlot()` function to visualize the 
+`chicago_wind` dataset.
+
+[Solution](#ex1)
+
+2. Use the `windRose()` function on the `chicago_wind` dataset
+and split the data into different panels by season.
+
+[Solution](#ex2)
+
+3. Use the `pollutionRose()` function for the ozone column
+in the `chicago_wind` dataset and change the `statistic`
+parameter to "prop.mean".
+
+[Solution](#ex3)
+
+4. Use `dplyr` to subset `airdata` down to ozone values (parameter `44201`) and
+sites `c("840170890005", "840170971007", "840171110001")`. Then use `tidyr`
+to convert the data to a wide format. Plot the three time series using the 
+`timePlot()` function in `openair`. First plot the raw hourly data, then use
+the `avg.time` parameter to plot daily, weekly, and monthly values.
+
+[Solution](#ex4)
+
+## Solutions
+
+### Solution 1{#ex1}
+
+```{r, eval=FALSE}
+library(region5air)
+library(openair)
+data(chicago_wind)
+chicago_wind$date <- substr(chicago_wind$datetime, 1, 13)
+chicago_wind$date <- as.POSIXct(chicago_wind$date, format = "%Y%m%dT%H%M",
+                                tz = "America/Chicago")
+wind <- select(chicago_wind, date, wind_speed, wind_dir, ozone)
+summaryPlot(wind)
+```
+
+```{r, echo=FALSE, warning=FALSE, message=FALSE}
+library(region5air)
+library(openair)
+data(chicago_wind)
+chicago_wind$date <- substr(chicago_wind$datetime, 1, 13)
+chicago_wind$date <- as.POSIXct(chicago_wind$date, format = "%Y%m%dT%H%M",
+                                tz = "America/Chicago")
+chicago_wind <- chicago_wind[!is.na(chicago_wind$date), ]
+wind <- select(chicago_wind, date, wind_speed, wind_dir, ozone)
+summaryPlot(wind)
+```
+
+[Back to exercises](#ex)
+
+### Solution 2 {#ex2}
+
+Using the `wind` data frame from Solution 1,
+```{r}
+names(wind)[1:3] <- c("date", "ws", "wd")
+windRose(wind, type = "season", key.footer = "knots")
+```
+
+[Back to exercises](#ex)
+
+### Solution 3 {#ex3}
+
+First let's plot with the default `statistic` of "prop.count".
+
+```{r}
+pollutionRose(wind, pollutant = "ozone", statistic = "prop.count")
+```
+
+
+
+```{r}
+pollutionRose(wind, pollutant = "ozone", statistic = "prop.mean")
+```
+
+[Back to exercises](#ex)
+
+### Solution 4 {#ex4}
+
+```{r, warning=FALSE, message=FALSE}
+library(tidyr)
+ozone <- filter(airdata, 
+                site %in% c("840170890005", "840170971007", "840171110001"),
+                parameter == 44201)
+ozone$date <- as.POSIXct(ozone$datetime, format = "%Y%m%dT%H%M",
+                                tz = "America/Chicago")
+# some dates weren't converted--remove those
+ozone <- filter(ozone, !is.na(date))
+ozone <- select(ozone, site, date, value)
+ozone <- spread(ozone, site, value)
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"))
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "day")
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "week")
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "month")
+```
+
+[Back to exercises](#ex)
