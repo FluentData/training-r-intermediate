@@ -23,7 +23,6 @@ and analyze the contents of the object.
 The `sp` package is a foundational package for dealing with spatial data. It provides classes and methods for making S4 objects in R. (For an explanation of S4 objects, see Hadley Wickham's page on object oriented programming in 
 [Advanced R](http://adv-r.had.co.nz/OO-essentials.html)). 
 
-
 ## `Spatial` {#Spatial}
 
 The most basic object that can be created with the `sp` package is the `Spatial` object. 
