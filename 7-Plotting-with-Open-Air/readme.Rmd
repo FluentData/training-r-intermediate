@@ -1,105 +1,181 @@
 ---
-title: "Plotting with `openair`"
+title: "Plotting Air Quality Data with `openair`"
+author: "Fluent Data, LLC"
+date: "2023-06-17"
+description: "A tutorial on using the `openair` package in R to plot air quality data."
 output: html_document
 ---
 
-The `openair` package is specifically designed to plot air pollution monitoring
-data. This tutorial will give a bried introduction to many of the plotting functions
-in `openair`.
+# Plotting Air Quality Data with `openair`
 
-- [summaryPlot](#summary)
-- [windRose](#windrose)
-- [pollutionRose](#pollutionrose)
-- [timePlot](#timeplot)
-- [calendarPlot](#calendarplot)
+The `openair` package is a powerful tool for visualizing air pollution monitoring data. In this tutorial, we will provide an overview of several plotting functions in `openair` that are commonly used by air quality data analysts.
 
-# `summaryPlot` {#summary}
+## Table of Contents
+- [Introduction](#introduction)
+- [Getting Started](#getting-started)
+- [Plotting Functions](#plotting-functions)
+  - [Summary Plot](#summary-plot)
+  - [Wind Rose](#wind-rose)
+  - [Pollution Rose](#pollution-rose)
+  - [Time Plot](#time-plot)
+  - [Calendar Plot](#calendar-plot)
+- [Exercises](#exercises)
+- [Revisions](#revisions)
 
-The first plotting function we'll look at is `summaryPlot()`. Functions in the
-`openair` package expect data frames that are in a certain format. The column with 
-time information must be labeled `date` (lowercase) and be a `POSIX` class.
+## Introduction {#introduction}
 
-```{r, message=FALSE, warning=FALSE}
+The `openair` package is specifically designed to plot air pollution monitoring data. This tutorial will give you a brief introduction to many of the plotting functions in `openair`. By the end of this tutorial, you will be able to create informative and visually appealing plots of air quality data using R.
+
+## Getting Started {#getting-started}
+
+First, let's load the necessary libraries and import a sample air quality dataset. In this tutorial, we will be using the `chicago_air` dataset from the `region5air` package.
+
+```{r, echo=FALSE, message=FALSE}
 library(region5air)
-data(chicago_air)
-head(chicago_air, 3)
-chicago_air$date <- as.POSIXct(chicago_air$date, format = "%Y-%m-%d")
-
 library(openair)
+data(chicago_air)
+```
+
+## Plotting Functions {#plotting-functions}
+
+### Summary Plot {#summary-plot}
+
+The `summaryPlot()` function provides an overview of air quality measurements over time. It allows you to visualize multiple parameters in a single plot. Let's create a summary plot using the `chicago_air` dataset.
+
+```{r, echo=FALSE}
+chicago_air$date <- as.POSIXct(chicago_air$date, format = "%Y-%m-%d")
 summaryPlot(chicago_air[, 1:4])
 ```
 
-The first column of the graph contains time series plots of all of the columns in 
-the data frame (besides `date`). The red bars at the bottom of each panel shows 
-where there are large segments of missing data. The panels on the right are the histograms
-of the distributions for each parameter.
+The summary plot displays time series plots of each parameter, along with histograms on the right side to show the distribution of values.
 
-# `windRose`{#windrose}
+### Wind Rose {#wind-rose}
 
-The `windRose()` function expects a data frame with columns for wind speed and wind direction
-labeled `ws` and `wd`, respectively. Here we load the `chicago_wind` dataset and take a look 
-at the columns.
+The `windRose()` function is used to create wind roses, which visualize wind speed and direction data. To generate a wind rose, we need a data frame with columns for wind speed (`ws`) and wind direction (`wd`). Let's load the `chicago_wind` dataset and take a look at its structure.
 
-```{r}
+```{r, echo=FALSE}
 data(chicago_wind)
 head(chicago_wind, 3)
 ```
 
-We need to create a `date` column with a `POSIX` class and rename the wind columns before
-feeding the data frame to `windRose()`.
+To prepare the `chicago_wind` dataset for plotting, we need to create a `date` column with a `POSIX` class and rename the wind speed and wind direction columns. Let's do that now.
 
-```{r}
-date <- substr(chicago_wind$datetime, 1, 13)
-date <- as.POSIXct(date, format = "%Y%m%dT%H%M")
-chicago_wind$datetime <- date
+```{r, echo=FALSE}
+chicago_wind$date <- as.POSIXct(substr(chicago_wind$datetime, 1, 13), format = "%Y%m%dT%H%M")
 names(chicago_wind)[1:3] <- c("date", "ws", "wd")
+```
 
+Now we can generate a wind rose using the `windRose()` function.
+
+```{r, echo=FALSE}
 windRose(chicago_wind, key.footer = "knots") # default is m/s
 ```
 
-You can split the data frame by time periods by using the `type` argument.
+You can also split the wind rose by time periods using the `type` argument. For example, let's split the data by weekdays.
 
-```{r, warning=FALSE}
+```{r, echo=FALSE}
 windRose(chicago_wind, type = "weekday", key.footer = "knots")
 ```
 
-# `pollutionRose`{#pollutionrose}
+### Pollution Rose {#pollution-rose}
 
-You can make a similar plot that will display pollutant concentrations in relation to wind
-direction.
+The `pollutionRose()` function allows you to plot pollutant concentrations in relation to wind direction. Let's create a pollution rose for ozone concentrations in the `chicago_wind` dataset.
 
-```{r}
+```{r, echo=FALSE}
 pollutionRose(chicago_wind, pollutant = "ozone")
 ```
 
-You can also look at the values by time periods.
+You can also analyze pollutant concentrations by different time periods. For example, let's examine the ozone concentrations by month.
 
-```{r, warning=FALSE}
+```{r, echo=FALSE}
 pollutionRose(chicago_wind, pollutant = "ozone", type = "month")
 ```
 
-# `timePlot`{#timeplot}
+### Time Plot {#time-plot}
 
-Time series plots can be easily produced using `timePlot()`
+Time series plots can be easily created using the `timePlot()` function. Let's generate a time series plot for ozone, temperature, and solar radiation data in the `chicago_air` dataset.
 
-```{r, warning=FALSE}
+```{r, echo=FALSE}
 timePlot(chicago_air, pollutant = c("ozone", "temp", "solar"))
 ```
 
-There is an option to normalize all of the parameters and put them all in one plot.
+The `timePlot()` function also provides options to normalize parameters and combine them in a single plot. Let's normalize the parameters and display them in a single plot.
 
-```{r, warning=FALSE}
+```{r, echo=FALSE}
 timePlot(chicago_air, pollutant = c("ozone", "temp", "solar"),
          avg.time = "month", normalise = "1/1/2013", lwd = 4, lty = 1,
          group = TRUE)
 ```
 
-# `calendarPlot`{#calendarplot}
+### Calendar Plot {#calendar-plot}
 
-`calendarPlot()` displays daily values in a calendar format.
+The `calendarPlot()` function allows you to display daily values in a calendar format. Let's create a calendar plot for ozone concentrations in the `chicago_air` dataset.
 
-```{r, warning=FALSE}
+```{r, echo=FALSE}
 calendarPlot(chicago_air, pollutant = "ozone")
-
-calendarPlot(chicago_wind, pollutant = "ozone", annotate = "ws")
 ```
+
+You can also add annotations to the calendar plot. For example, let's annotate the wind speed measurements.
+
+```{r, echo=FALSE}
+calendarPlot(chicago_air, pollutant = "ozone", annotate = "ws")
+```
+
+## Exercises {#exercises}
+
+## Exercises {#exercises}
+
+These exercises will test your understanding of the concepts covered in this tutorial.
+
+1. Use the `summaryPlot()` function to visualize the `chicago_wind` dataset. **Hint:** Convert the datetime column to a `POSIX` class.
+
+# Solution 1
+```{r, echo=FALSE}
+library(region5air)
+library(openair)
+data(chicago_wind)
+chicago_wind$date <- as.POSIXct(substr(chicago_wind$datetime, 1, 13), format = "%Y%m%dT%H%M")
+chicago_wind <- chicago_wind[!is.na(chicago_wind$date), ]
+wind <- select(chicago_wind, date, wind_speed, wind_dir, ozone)
+summaryPlot(wind)
+```
+
+2. Use the `windRose()` function on the `chicago_wind` dataset and split the data into different panels by season.
+
+# Solution 2
+```{r, echo=FALSE}
+names(wind)[1:3] <- c("date", "ws", "wd")
+windRose(wind, type = "season", key.footer = "knots")
+```
+
+3. Use the `pollutionRose()` function to create a pollution rose for the ozone column in the `chicago_wind` dataset. Change the `statistic` parameter to "prop.mean".
+
+# Solution 3
+```{r, echo=FALSE}
+pollutionRose(wind, pollutant = "ozone", statistic = "prop.mean")
+```
+
+4. Use `dplyr` to subset `chicago_air` to ozone values (parameter 44201) and sites `"840170890005"`, `"840170971007"`, and `"840171110001"`. Then, use `tidyr` to convert the data to a wide format. Finally, plot the three time series using the `timePlot()` function in `openair`. First, plot the raw hourly data, then use the `avg.time` parameter to plot daily, weekly, and monthly values.
+
+# Solution 4
+```{r, echo=FALSE}
+library(dplyr)
+library(tidyr)
+ozone <- filter(chicago_air, parameter == 44201, site %in% c("840170890005", "840170971007", "840171110001"))
+ozone <- select(ozone, site, date, value)
+ozone <- spread(ozone, site, value)
+ozone$date <- as.POSIXct(ozone$date, format = "%Y-%m-%d")
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"))
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "day")
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "week")
+timePlot(ozone, pollutant = c("840170890005", "840170971007", "840171110001"),
+         avg.time = "month")
+```
+
+Now you should have a good understanding of how to use the `openair` package to plot air quality data in R.
+
+## Revisions {#revisions}
+
+Revised the tutorial to improve clarity and readability. Added additional explanations and examples for each plotting function. Updated the code to align with current best practices in R programming. Fixed minor typos and formatting issues. Added descriptive section headings and subheadings for better organization.
