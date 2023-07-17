@@ -5,7 +5,7 @@ output:
     keep_md: yes
 ---
 
-`dplyr` is an [R package](https://cran.r-project.org/web/packages/dplyr/index.html) written
+`dplyr` is an [R package](https://dplyr.tidyverse.org/) written
 by [Hadley Wickham](http://had.co.nz/). It makes data manipulation of data frames easier and quicker.
 
 This tutorial will cover the following functions in the `dplyr` package:
