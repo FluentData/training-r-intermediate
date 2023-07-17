@@ -106,3 +106,89 @@ head(chicago_wide, 3)
 
 ```
 
+# Miscellaneous functions
+
+Below is a list of other useful functions from `dplyr` and `tidyr`. 
+
+The example code utilizes the pipe `%>%`, as described in the first 
+[Data Manipulation](training-r-intermediate/blob/initial-update/1-Data-Manipulation-1/readme.md)
+tutorial.
+
+## from `dplyr`
+
+- `distinct()`: get distinct values from a data frame
+
+```{r}
+
+chicago_long %>%
+  select(parameter) %>%
+  distinct()
+
+```
+
+- `slice()`: select rows using a numeric vector
+
+```{r}
+
+chicago_air %>%
+  slice(1:5)
+
+```
+
+- `slice_sample()`: select a certain number of rows randomly
+
+```{r}
+chicago_air %>%
+  slice_sample(n = 5)
+
+```
+
+- `pull()`: get a column from the data frame as a vector
+
+```{r}
+ozone <- chicago_air %>%
+  pull(ozone)
+head(ozone)
+```
+
+## from `tidyr`
+
+- `separate()`: separate a column into multiple columns using a delimiter
+
+```{r, warning=FALSE, message=FALSE}
+# make an example column using full site info
+combined_site <- chicago_aqs %>%
+  transmute(Site_ID = paste(State_Code, County_Code, Site_Number, POC, sep = "-"),
+            Date_Local, Parameter_Code, AQI)
+
+head(combined_site, 3)
+
+# split up the Site_ID back into 4 columns
+split_site <- combined_site %>%
+  separate(Site_ID, c("state", "county", "site", "poc"), sep = "-")
+
+head(split_site, 3)
+  
+```
+
+- `replace_na()`: replace `NA` values in a data frame with a specific value 
+
+```{r, warning=FALSE, message=FALSE}
+# create a data frame
+df <- data.frame(day = 1:5, count = c(NA, 4, 6, 2, 1), type = c("a", "b", NA, "a", "b"))
+
+df
+
+# provide a named list for columns and what to replace NA values with
+df %>%
+  replace_na(list(count = 0, type = "unknown"))
+```
+
+- `expand_grid()`: makes a data grid out of all possible combinations of input vectors
+
+```{r, warning=FALSE, message=FALSE}
+sites <- c(1:3)
+dates <- seq(as.Date("2023-01-01"), as.Date("2023-01-05"), by = 1)
+
+expand_grid(sites, dates)
+```
