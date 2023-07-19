@@ -31,7 +31,8 @@ replace that base function in our environment), we will call our function `my_me
 Here is the basic structure of creating a custom function, which uses the appropriately
 named  `function()`.
 
-```{r, eval=FALSE}
+
+```r
 my_mean <- function( ){
   
 }
@@ -41,7 +42,8 @@ The parentheses will contain the parameters we want our function to have, and th
 curly braces will contain the operation that will be performed on the parameters. 
 First, we'll need a vector of numbers, so we'll call it the `numbers` parameter.
 
-```{r, eval=FALSE}
+
+```r
 my_mean <- function(numbers){
   #do something to numbers
 }
@@ -49,7 +51,8 @@ my_mean <- function(numbers){
 
 Next we'll calculate the average of the values in `numbers`.
 
-```{r, eval=TRUE}
+
+```r
 my_mean <- function(numbers){
   
 sum(numbers) / length(numbers)
@@ -61,12 +64,23 @@ sum(numbers) / length(numbers)
 
 Now let's try our function and compare it to the built in R function.
 
-```{r}
+
+```r
 my_vector <- c(1, 3, 5, 2, 6, 9, 0)
 vector_mean <- my_mean(numbers = my_vector)
 vector_mean
+```
 
+```
+## [1] 3.714286
+```
+
+```r
 mean(my_vector)
+```
+
+```
+## [1] 3.714286
 ```
 
 # Mutate functions
@@ -82,7 +96,8 @@ is a mutate function.
 To demonstrate, we will create a function that converts temperature values from
 Fahrenheit to Celsius.
 
-```{r}
+
+```r
 convert_temp <- function(temp_value) {
   
   (temp_value - 32) * (5 / 9) 
@@ -92,13 +107,17 @@ convert_temp <- function(temp_value) {
 # test it out on a vector of numbers
 
 convert_temp(c(32, 0, 100))
+```
 
+```
+## [1]   0.00000 -17.77778  37.77778
 ```
 
 We can use this function along with `mutate()` to add a `temp_celsius` column to
 the `chicago_air` data frame.
 
-```{r, message=FALSE, warning=FALSE}
+
+```r
 library(dplyr)
 library(region5air)
 data(chicago_air)
@@ -106,14 +125,23 @@ data(chicago_air)
 chicago_celsius <- mutate(chicago_air, temp_celsius = convert_temp(temp))
 
 head(chicago_celsius, 3)
+```
 
+```
+## # A tibble: 3 × 7
+##   date       ozone  temp pressure month weekday temp_celsius
+##   <date>     <dbl> <dbl>    <dbl> <dbl>   <dbl>        <dbl>
+## 1 2021-01-01 0.019    42    1007.     1       6         5.56
+## 2 2021-01-02 0.02     35    1003.     1       7         1.67
+## 3 2021-01-03 0.026    34    1002.     1       1         1.11
 ```
 
 A better function design would take into account which temperature scale is being
 converted, and which scale it is being converted to. Here is a modified version
 of the function that uses two more parameters for that purpose.
 
-```{r}
+
+```r
 convert_temp <- function(temp_value, to = c("celcius", "kelvin"), from = "fahrenheit") {
   
   if(from == "fahrenheit" & to == "celcius") {
@@ -135,7 +163,15 @@ convert_temp <- function(temp_value, to = c("celcius", "kelvin"), from = "fahren
 chicago_kelvin <- mutate(chicago_air, temp_kelvin = convert_temp(temp, "kelvin"))
 
 head(chicago_kelvin, 3)
+```
 
+```
+## # A tibble: 3 × 7
+##   date       ozone  temp pressure month weekday temp_kelvin
+##   <date>     <dbl> <dbl>    <dbl> <dbl>   <dbl>       <dbl>
+## 1 2021-01-01 0.019    42    1007.     1       6        279.
+## 2 2021-01-02 0.02     35    1003.     1       7        275.
+## 3 2021-01-03 0.026    34    1002.     1       1        274.
 ```
 
 Now the `convert_temp()` function can convert from Fahrenheit to Celsius or
@@ -154,20 +190,20 @@ work well with the `summarise()` function from `dplyr`.
 As an example, we could write a function that takes a vector of ozone values in
 ppm and returns the count of those values that exceeded the standard of 0.070 ppm.
 
-```{r}
+
+```r
 standard_exceedances <- function(concentration) {
   
   sum(concentration > 0.070)
   
 }
-
 ```
 
 We can use this function along with `group_by()` and `summarise()` to tell us 
 how many days there was an exceedance of the standard value in a given month.
 
-```{r}
 
+```r
 chicago_grouped <- group_by(chicago_air, month)
 
 chicago_exceedances <- summarise(chicago_grouped, 
@@ -179,7 +215,15 @@ chicago_exceedances <- chicago_air %>%
   summarise(ozone_exceedances = standard_exceedances(ozone))
 
 head(chicago_exceedances, 3)
+```
 
+```
+## # A tibble: 3 × 2
+##   month ozone_exceedances
+##   <dbl>             <int>
+## 1     1                 0
+## 2     2                 0
+## 3     3                 0
 ```
 
 
@@ -199,8 +243,8 @@ yourself doing the same manual operations every time you get new data in the sam
 format. For example, it maight be useful to summarize daily 1-hour maximum ozone 
 for the year.
 
-```{r}
 
+```r
 summarise_ozone <- function(ozone_df, ozone_column) {
   
   ozone_df %>%
@@ -213,15 +257,40 @@ summarise_ozone <- function(ozone_df, ozone_column) {
 
 chicago_air %>%
   summarise_ozone(ozone)
+```
 
+```
+## # A tibble: 1 × 4
+##   first_03_max second_03_max third_03_max fourth_03_max
+##          <dbl>         <dbl>        <dbl>         <dbl>
+## 1        0.065         0.064        0.062         0.062
 ```
 
 The double curly braces `{{ }}` allow you to provide the column name without 
 quotes. The function also allows you to pass a data frame that has been grouped
 using the `group_by()` function. Here we summarize the ozone data by month:
 
-```{r}
+
+```r
 chicago_air %>%
   group_by(month) %>%
   summarise_ozone(ozone)
+```
+
+```
+## # A tibble: 12 × 5
+##    month first_03_max second_03_max third_03_max fourth_03_max
+##    <dbl>        <dbl>         <dbl>        <dbl>         <dbl>
+##  1     1        0.037         0.033        0.033         0.032
+##  2     2        0.055         0.051        0.048         0.047
+##  3     3        0.057         0.05         0.049         0.048
+##  4     4        0.057         0.057        0.056         0.055
+##  5     5        0.061         0.056        0.056         0.056
+##  6     6        0.065         0.064        0.062         0.062
+##  7     7        0.053         0.05         0.049         0.048
+##  8     8        0.05          0.046        0.044         0.044
+##  9     9        0.057         0.056        0.055         0.054
+## 10    10        0.05          0.049        0.049         0.047
+## 11    11        0.041         0.041        0.038         0.037
+## 12    12        0.033         0.033        0.032         0.032
 ```
