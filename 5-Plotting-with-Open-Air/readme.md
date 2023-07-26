@@ -13,7 +13,8 @@ introduction to many of those functions.
 
 Functions in the `openair` package generally have this format:
 
-```{r, eval=FALSE}
+
+```r
 functionName(the_data, options, ...)
 ```
 
@@ -30,8 +31,8 @@ We will use two data frames from the `region5air` package: `chicago_air` and
 `chicago_wind`. Below, the data frames are loaded and columns are renamed to
 meet the requirements of the `openair` package.
 
-```{r, warning=FALSE, message=FALSE}
 
+```r
 library(region5air)
 library(dplyr)
 data(chicago_air)
@@ -39,7 +40,6 @@ data(chicago_wind)
 
 chicago_wind <- rename(chicago_wind, ws = wind_speed, wd = wind_direction,
                        date = datetime)
-
 ```
 
 
@@ -50,10 +50,13 @@ The `summaryPlot()` function gives a plot of the data over time along
 with summarizing details such as the min, max, and mean values. It also gives a 
 histogram of the distribution.
 
-```{r, message=FALSE, warning=FALSE}
+
+```r
 library(openair)
 summaryPlot(select(chicago_air, date:pressure))
 ```
+
+![](readme_files/figure-html/unnamed-chunk-3-1.png)<!-- -->
 
 The first column of the graph contains time series plots of all of the columns in 
 the data frame (besides `date`). The red bars at the bottom of each panel shows 
@@ -68,32 +71,48 @@ plot displays spokes that indicate the percentage of time the wind blows from a 
 direction, and the color represents the speed. 
 
 
-```{r}
+
+```r
 windRose(chicago_wind, key.footer = "knots") # default is m/s
 ```
+
+![](readme_files/figure-html/unnamed-chunk-4-1.png)<!-- -->
 
 You can split the data frame by time periods by using the `type` argument. For
 example, a type of `"weekday"` splits the data into 7 different plots for each
 day of the week.
 
-```{r, message=FALSE}
+
+```r
 windRose(chicago_wind, type = "weekday", key.footer = "knots")
 ```
+
+![](readme_files/figure-html/unnamed-chunk-5-1.png)<!-- -->
 
 # `pollutionRose`{#pollutionrose}
 
 You can make a similar plot that will display pollutant concentrations in relation to wind
 direction.
 
-```{r}
+
+```r
 pollutionRose(chicago_wind, pollutant = "ozone")
 ```
 
+![](readme_files/figure-html/unnamed-chunk-6-1.png)<!-- -->
+
 You can also look at the values by time periods.
 
-```{r, warning=FALSE}
+
+```r
 pollutionRose(chicago_wind, pollutant = "ozone", type = "month")
 ```
+
+```
+## Detected data with Daylight Saving Time.
+```
+
+![](readme_files/figure-html/unnamed-chunk-7-1.png)<!-- -->
 
 # `timePlot`
 
@@ -101,29 +120,42 @@ Time series plots can be easily produced using `timePlot()`. The `pollutant`
 parameter identifies the columns to be plotted, and setting `y.relation` to
 `"free"` allows each series to be plotted on its own scale.
 
-```{r, warning=FALSE}
+
+```r
 timePlot(chicago_air, pollutant = c("ozone", "temp", "pressure"),
          y.relation = "free")
 ```
+
+![](readme_files/figure-html/unnamed-chunk-8-1.png)<!-- -->
 
 There is an option to normalize all of the values and group them in one plot. The
 graph below plots the average for each month, normalized to the first day of the
 time series, 2021-01-01. Other parameter options determine the type of line and
 thickness.
 
-```{r, warning=FALSE}
+
+```r
 timePlot(chicago_air, pollutant = c("ozone", "temp", "pressure"),
          avg.time = "month", 
          normalise = "1/1/2021", lwd = 4, lty = 1,
          group = TRUE)
 ```
 
+![](readme_files/figure-html/unnamed-chunk-9-1.png)<!-- -->
+
 # `calendarPlot`
 
 `calendarPlot()` displays daily values in a calendar format.
 
-```{r, warning=FALSE, message=FALSE}
-calendarPlot(chicago_air, pollutant = "ozone")
 
+```r
+calendarPlot(chicago_air, pollutant = "ozone")
+```
+
+![](readme_files/figure-html/unnamed-chunk-10-1.png)<!-- -->
+
+```r
 calendarPlot(chicago_wind, pollutant = "ozone", annotate = "ws")
 ```
+
+![](readme_files/figure-html/unnamed-chunk-10-2.png)<!-- -->
