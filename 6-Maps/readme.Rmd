@@ -1,16 +1,18 @@
 ---
 title: "Maps"
-output: html_document
+output: 
+  html_document: 
+    keep_md: yes
 ---
 
 In this tutorial we'll cover the following topics:
 
-* [Basic Maps](#basic)
-* [Google Maps](#google)
-* [Leaflet Maps](#leaflet)
+* Basic Maps
+* Google Maps
+* Leaflet Maps
 
 
-# Basic Maps {#basic}
+# Basic Maps
 
 There is no function for displaying maps in the base R functionality. To display
 a simple map, we use the `maps` package. First, let's create a simple Indiana map.
@@ -35,9 +37,6 @@ monitors <- read.table(header=T, text='
                        ')
 ```
 
-```{r, eval=FALSE}
-points(x = monitors$long, y = monitors$lat)
-```
 
 ```{r, echo=FALSE}
 map(database = 'state', regions = 'indiana')
@@ -81,7 +80,7 @@ text(x = monitors$long, y = monitors$lat, labels = monitors$name, pos = 2)
 
 
 
-# Google Maps {#google}
+# Google Maps
 
 
 To make interactive Google maps, we can use the `googleVis` package.
@@ -110,7 +109,7 @@ options(op)
 ```
 
 
-# Leaflet Maps {#leaflet}
+# Leaflet Maps
 
 
 Leaflet is another interactive map that can be created in R using the `leaflet`
