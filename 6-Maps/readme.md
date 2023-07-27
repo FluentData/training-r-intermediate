@@ -110,22 +110,40 @@ so we need to create a data frame with a variable in that format.
 
 
 ```r
+op <- options(gvis.plot.tag='chart')
 google.location <- paste(monitors$lat, monitors$long, sep = ":")
 monitors.google <- data.frame(monitors, google.location)
-g.inter.map <- gvisMap(data = monitors.google, locationvar = "google.location",
-                       tipvar = "name")
-plot(g.inter.map)
+gvisMap(data = monitors.google, locationvar = "google.location", tipvar = "name")
 ```
 
-<!-- Map generated in R 4.3.0 by googleVis 0.7.1 package -->
-<!-- Wed Jul 26 20:19:43 2023 -->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
+  "https://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="https://www.w3.org/1999/xhtml">
+<head>
+<title>MapID4965287748c</title>
+<meta http-equiv="content-type" content="text/html;charset=utf-8" />
+<style type="text/css">
+body {
+  color: #444444;
+  font-family: Arial,Helvetica,sans-serif;
+  font-size: 75%;
+  }
+  a {
+  color: #4D87C7;
+  text-decoration: none;
+}
+</style>
+</head>
+<body>
+ <!-- Map generated in R 4.3.0 by googleVis 0.7.1 package -->
+<!-- Wed Jul 26 20:32:43 2023 -->
 
 
 <!-- jsHeader -->
 <script type="text/javascript">
  
 // jsData 
-function gvisDataMapID31412a974ff () {
+function gvisDataMapID4965287748c () {
 var data = new google.visualization.DataTable();
 var datajson =
 [
@@ -168,13 +186,13 @@ return(data);
 }
  
 // jsDrawChart
-function drawChartMapID31412a974ff() {
-var data = gvisDataMapID31412a974ff();
+function drawChartMapID4965287748c() {
+var data = gvisDataMapID4965287748c();
 var options = {};
 options["showTip"] = true;
 
     var chart = new google.visualization.Map(
-    document.getElementById('MapID31412a974ff')
+    document.getElementById('MapID4965287748c')
     );
     chart.draw(data,options);
     
@@ -198,9 +216,9 @@ if (newPackage)
   pkgs.push(chartid);
   
 // Add the drawChart function to the global list of callbacks
-callbacks.push(drawChartMapID31412a974ff);
+callbacks.push(drawChartMapID4965287748c);
 })();
-function displayChartMapID31412a974ff() {
+function displayChartMapID4965287748c() {
   var pkgs = window.__gvisPackages = window.__gvisPackages || [];
   var callbacks = window.__gvisCallbacks = window.__gvisCallbacks || [];
   window.clearTimeout(window.__gvisLoad);
@@ -224,13 +242,21 @@ callbacks.shift()();
 </script>
  
 <!-- jsChart -->  
-<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartMapID31412a974ff"></script>
+<script type="text/javascript" src="https://www.google.com/jsapi?callback=displayChartMapID4965287748c"></script>
  
 <!-- divChart -->
   
-<div id="MapID31412a974ff" 
+<div id="MapID4965287748c" 
   style="width: 500; height: automatic;">
 </div>
+ <div><span>Data: monitors.google &#8226; Chart ID: <a href="Chart_MapID4965287748c.html">MapID4965287748c</a> &#8226; <a href="https://mages.github.io/googleVis/">googleVis-0.7.1</a></span><br /> 
+<!-- htmlFooter -->
+<span> 
+  R version 4.3.0 (2023-04-21) 
+  &#8226; <a href="https://developers.google.com/terms/">Google Terms of Use</a> &#8226; <a href="https://developers.google.com/chart/interactive/docs/gallery/map">Documentation and Data Policy</a>
+</span></div>
+</body>
+</html>
 
 
 
@@ -252,8 +278,8 @@ m
 ```
 
 ```{=html}
-<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-4facaf8efaa4b48ab625" style="width:672px;height:480px;"></div>
-<script type="application/json" data-for="htmlwidget-4facaf8efaa4b48ab625">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap<\/a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA<\/a>"}]},{"method":"addMarkers","args":[[41.60668,39.811097,39.749019,38.013248,39.159383,39.997484],[-87.30472899999999,-86.114469,-86.186314,-87.577856,-86.504762,-86.395172],null,null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},["Gary-IITRI","Indpls-Washington-Park","Indpls-Harding-St.","Evansville-Buena-Vista","Bloomington","Whitestown"],null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[38.013248,41.60668],"lng":[-87.577856,-86.114469]}},"evals":[],"jsHooks":[]}</script>
+<div class="leaflet html-widget html-fill-item-overflow-hidden html-fill-item" id="htmlwidget-aa9ba3cbb05647289066" style="width:672px;height:480px;"></div>
+<script type="application/json" data-for="htmlwidget-aa9ba3cbb05647289066">{"x":{"options":{"crs":{"crsClass":"L.CRS.EPSG3857","code":null,"proj4def":null,"projectedBounds":null,"options":{}}},"calls":[{"method":"addTiles","args":["https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",null,null,{"minZoom":0,"maxZoom":18,"tileSize":256,"subdomains":"abc","errorTileUrl":"","tms":false,"noWrap":false,"zoomOffset":0,"zoomReverse":false,"opacity":1,"zIndex":1,"detectRetina":false,"attribution":"&copy; <a href=\"https://openstreetmap.org\">OpenStreetMap<\/a> contributors, <a href=\"https://creativecommons.org/licenses/by-sa/2.0/\">CC-BY-SA<\/a>"}]},{"method":"addMarkers","args":[[41.60668,39.811097,39.749019,38.013248,39.159383,39.997484],[-87.30472899999999,-86.114469,-86.186314,-87.577856,-86.504762,-86.395172],null,null,null,{"interactive":true,"draggable":false,"keyboard":true,"title":"","alt":"","zIndexOffset":0,"opacity":1,"riseOnHover":false,"riseOffset":250},["Gary-IITRI","Indpls-Washington-Park","Indpls-Harding-St.","Evansville-Buena-Vista","Bloomington","Whitestown"],null,null,null,null,{"interactive":false,"permanent":false,"direction":"auto","opacity":1,"offset":[0,0],"textsize":"10px","textOnly":false,"className":"","sticky":true},null]}],"limits":{"lat":[38.013248,41.60668],"lng":[-87.577856,-86.114469]}},"evals":[],"jsHooks":[]}</script>
 ```
 
 

@@ -8,8 +8,9 @@ output:
 In this tutorial we'll cover the following topics:
 
 * Basic Maps
-* Google Maps
-* Leaflet Maps
+* ggplot2 Maps
+* ggmap
+* leaflet
 
 
 # Basic Maps
@@ -80,36 +81,67 @@ text(x = monitors$long, y = monitors$lat, labels = monitors$name, pos = 2)
 
 
 
-# Google Maps
+# ggplot2 Maps
 
 
-To make interactive Google maps, we can use the `googleVis` package.
+The `ggplot2` package has a `geom_polygon()` function that by default draws a map
+using lat/long data with a black fill. We first get the necessary data frame for
+drawing a map of the U.S. from a `ggplot2` function named `map_data()`
 
-```{r, warning=FALSE, message=FALSE}
-library(googleVis)
+```{r}
+library(ggplot2)
+
+us_data <- map_data("usa")
+head(us_data)
 ```
 
-```{r, echo=FALSE}
-op <- options(gvis.plot.tag='chart')
-```
+```{r, message=FALSE, warning=FALSE}
 
-We have to do some formatting first. The coordinates must be in the form `lat:long`
-so we need to create a data frame with a variable in that format.
+ggplot() + geom_polygon(data = us_data, aes(x=long, y = lat, group = group))
 
-```{r, results='asis', tidy=FALSE}
-google.location <- paste(monitors$lat, monitors$long, sep = ":")
-monitors.google <- data.frame(monitors, google.location)
-g.inter.map <- gvisMap(data = monitors.google, locationvar = "google.location",
-                       tipvar = "name")
-plot(g.inter.map)
-```
-
-```{r, echo=FALSE}
-options(op)
 ```
 
 
-# Leaflet Maps
+We can recreate the Indiana county map with monitors by using the `"county"`
+option in the `map_data()` function and filtering to Indiana.
+
+```{r}
+library(dplyr)
+
+county_data <- map_data("county") %>%
+  filter(region == "indiana")
+
+head(county_data)
+
+```
+
+```{r}
+ggplot(data = county_data) + 
+  geom_polygon(aes(x = long, y = lat, group = group), fill = NA, color = "black") +
+  geom_point(data = monitors, aes(x = long, y = lat)) +
+  coord_fixed(1.3)
+```
+
+
+# ggmap
+
+The `ggmap` package is made specifically to create `ggplot2` style maps using 
+raster tiles from services like 
+[Google Maps](https://developers.google.com/maps/documentation/maps-static?hl=en)
+and [Stamen Maps](http://maps.stamen.com/#terrain/12/37.7706/-122.3782). __Note__
+The Google Maps service now requires a key.
+
+```{r, message=FALSE, warning=FALSE}
+library(ggmap)
+indpls_monitors <- monitors %>%
+  filter(grepl("Indpls", name)) %>%
+  rename(lon = long)
+
+qmplot(lon, lat, data = indpls_monitors, maptype = "terrain", color = I("red"))
+
+```
+
+# leaflet
 
 
 Leaflet is another interactive map that can be created in R using the `leaflet`
