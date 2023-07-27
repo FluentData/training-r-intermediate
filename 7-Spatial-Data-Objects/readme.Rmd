@@ -3,9 +3,11 @@ title: "Spatial Data Objects"
 output: html_document
 ---
 
-Many R packages have been developed to visualize and analyze spatial data. The best 
-comprehensive resource that I've found on this topic is the book
-[Applied Spatial Data Analysis with R](http://www.amazon.com/Applied-Spatial-Data-Analysis-Use/dp/1461476178). This tutorial relies heavily on that book.
+Many R packages have been developed to visualize and analyze spatial data. The 
+online book [Geocomputation with R](http://www.amazon.com/Applied-Spatial-Data-Analysis-Use/dp/1461476178)
+provides a good overview of the current state of geographic analysis in the R
+ecosystem. This tutorial relies heavily on that book and covers the following
+topics.
 
 - [The sp package](#sp)
 - [Spatial objects](#Spatial)

@@ -1,0 +1,227 @@
+---
+title: "Custom Functions"
+output: 
+  html_document: 
+    keep_md: yes
+---
+
+
+
+If we can do _anything_ in R, then we already know how to use functions. This tutorial
+will cover how to create our own functions. We'll also learn how to write functions
+that work well in the tidyverse. 
+
+- Writing functions
+- Mutate functions
+- Summarise functions
+- Data frame functions
+
+
+# Writing functions
+
+We already know that functions in R usually take at least one parameter inside the
+parentheses. For example, if we want to use the `mean()` function, we look at the
+documentation by typing `?mean()` and see that it takes at least one required 
+numeric parameter named `x`.
+
+The first function we write will be our own version of a function that calculates
+the mean of a numeric vector. Since we can't just call it `mean` (or, if we do, we will
+replace that base function in our environment), we will call our function `my_mean`.
+
+Here is the basic structure of creating a custom function, which uses the appropriately
+named  `function()`.
+
+```{r, eval=FALSE}
+my_mean <- function( ){
+  
+}
+```
+
+The parentheses will contain the parameters we want our function to have, and the
+curly braces will contain the operation that will be performed on the parameters. 
+First, we'll need a vector of numbers, so we'll call it the `numbers` parameter.
+
+```{r, eval=FALSE}
+my_mean <- function(numbers){
+  #do something to numbers
+}
+```
+
+Next we'll calculate the average of the values in `numbers`.
+
+```{r, eval=TRUE}
+my_mean <- function(numbers){
+  
+sum(numbers) / length(numbers)
+  
+}
+```
+
+
+
+Now let's try our function and compare it to the built in R function.
+
+```{r}
+my_vector <- c(1, 3, 5, 2, 6, 9, 0)
+vector_mean <- my_mean(numbers = my_vector)
+vector_mean
+
+mean(my_vector)
+```
+
+# Mutate functions
+
+When we are working with data frames, it's useful to create functions that work 
+with `mutate()`. As described in the second
+[Data Manipulation](training-r-intermediate/blob/initial-update/2-Data-Manipulation-2/readme.md)
+tutorial, the `mutate()` function takes a data frame as the first argument and
+allows you to add new columns. A custom function that takes a vector as the 
+first argument and returns a vector with the same length (and in the same order)
+is a mutate function.
+
+To demonstrate, we will create a function that converts temperature values from
+Fahrenheit to Celsius.
+
+```{r}
+convert_temp <- function(temp_value) {
+  
+  (temp_value - 32) * (5 / 9) 
+  
+}
+
+# test it out on a vector of numbers
+
+convert_temp(c(32, 0, 100))
+
+```
+
+We can use this function along with `mutate()` to add a `temp_celsius` column to
+the `chicago_air` data frame.
+
+```{r, message=FALSE, warning=FALSE}
+library(dplyr)
+library(region5air)
+data(chicago_air)
+
+chicago_celsius <- mutate(chicago_air, temp_celsius = convert_temp(temp))
+
+head(chicago_celsius, 3)
+
+```
+
+A better function design would take into account which temperature scale is being
+converted, and which scale it is being converted to. Here is a modified version
+of the function that uses two more parameters for that purpose.
+
+```{r}
+convert_temp <- function(temp_value, to = c("celcius", "kelvin"), from = "fahrenheit") {
+  
+  if(from == "fahrenheit" & to == "celcius") {
+    
+    (temp_value - 32) * (5 / 9)
+    
+  } else if(from == "fahrenheit" & to == "kelvin") {
+    
+    (temp_value - 32) * (5 / 9) + 273.15
+    
+  } else {
+    
+    stop("currently this function only converts from Fahrenheit to Celcius or Kelvin")
+    
+  }
+  
+}
+
+chicago_kelvin <- mutate(chicago_air, temp_kelvin = convert_temp(temp, "kelvin"))
+
+head(chicago_kelvin, 3)
+
+```
+
+Now the `convert_temp()` function can convert from Fahrenheit to Celsius or
+Kelvin. Notice we do not need to supply the `from =` parameter, since the default
+value is the only value that can be used. The `stop()` function is a way to let
+the user know that this function only converts from Fahrenheit, by adding a 
+helpful message for any situation that doesn't fall within the currently allowed
+options. Further modification to the function would allow for conversion from 
+any of the temperature scales to any other.
+
+# Summarise functions
+
+Summarise functions take a vector of values and return a single value. They work
+work well with the `summarise()` function from `dplyr`.
+
+As an example, we could write a function that takes a vector of ozone values in
+ppm and returns the count of those values that exceeded the standard of 0.070 ppm.
+
+```{r}
+standard_exceedances <- function(concentration) {
+  
+  sum(concentration > 0.070)
+  
+}
+
+```
+
+We can use this function along with `group_by()` and `summarise()` to tell us 
+how many days there was an exceedance of the standard value in a given month.
+
+```{r}
+
+chicago_grouped <- group_by(chicago_air, month)
+
+chicago_exceedances <- summarise(chicago_grouped, 
+                                 ozone_exceedances = standard_exceedances(ozone))
+
+# equivalently using pipes
+chicago_exceedances <- chicago_air %>%
+  group_by(month) %>%
+  summarise(ozone_exceedances = standard_exceedances(ozone))
+
+head(chicago_exceedances, 3)
+
+```
+
+
+
+
+# Data frame functions
+
+Another type of function that is useful with `dplyr` and other 
+[tidyverse packages](https://www.tidyverse.org/packages/)
+are data frame functions. These are functions that take a data frame as the
+first parameter and return a data frame. This keeps the data in a 
+[tidy shape](https://cran.r-project.org/web/packages/tidyr/vignettes/tidy-data.html)
+and allows for a data flow that works with pipes.
+
+A useful data frame function might summarize data in the same way, if you find 
+yourself doing the same manual operations every time you get new data in the same
+format. For example, it maight be useful to summarize daily 1-hour maximum ozone 
+for the year.
+
+```{r}
+
+summarise_ozone <- function(ozone_df, ozone_column) {
+  
+  ozone_df %>%
+    summarise(first_03_max = max({{ozone_column}}, na.rm = TRUE),
+              second_03_max = sort({{ozone_column}}, decreasing = TRUE)[2],
+              third_03_max = sort({{ozone_column}}, decreasing = TRUE)[3],
+              fourth_03_max = sort({{ozone_column}}, decreasing = TRUE)[4])
+  
+}
+
+chicago_air %>%
+  summarise_ozone(ozone)
+
+```
+
+The double curly braces `{{ }}` allow you to provide the column name without 
+quotes. The function also allows you to pass a data frame that has been grouped
+using the `group_by()` function. Here we summarize the ozone data by month:
+
+```{r}
+chicago_air %>%
+  group_by(month) %>%
+  summarise_ozone(ozone)
+```
