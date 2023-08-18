@@ -1,0 +1,201 @@
+# Data Manipulation Part 2: Diving Deeper into dplyr and tidyr
+
+In this tutorial, we'll continue our exploration of the mighty [dplyr](https://dplyr.tidyverse.org/) package for data manipulation and even dip into the fantastic world of [tidyr](https://tidyr.tidyverse.org/) for reshaping data. Here's our plan of action:
+
+- Bolster your data manipulation skills with `mutate()` and `transmute()`
+- Discover the art of data reshaping with `pivot_longer()`
+- Go the other direction with `pivot_wider()`
+- Get familiar with a smorgasbord of other helpful functions
+
+Where needed, we will primarily use data from the `chicago_air` dataset of the `region5air` package.
+
+```{r}
+library(dplyr)
+library(region5air)
+data(chicago_air)
+```
+
+```card:info
+Understanding how to manipulate and reshape data effectively can drastically improve your data analysis workflow. Be sure to work along with the exercises to get a grasp of how to use these functions!
+```
+
+## Adding Columns with mutate() and transmute()
+
+Let's start with two champions of the dplyr collection: `mutate()` and `transmute()`. In our [Data Manipulation Part 1](#), we learned how to use `group_by()` and `summarise()` for operations on grouped data. We're now turning our focus to adding new columns to our dataframe based on computations or transformations of existing columns. Enter `mutate()` and `transmute()`.
+
+### Mutate like a Pro
+
+`mutate()` allows you to create new columns based on existing ones. Let's try it out by adding a `ozone_lag1` column to our `chicago_air` dataset that represents a one day lagged value of the ozone column.
+
+```r
+chicago_mutated <- mutate(chicago_air, ozone_lag1 = lag(ozone, n = 1))
+head(chicago_mutated, 3)
+```
+
+This example piques your interest, doesn't it? Let's generate another column, `diff_standard`, that capture the difference between the ozone value and an arbitrarily chosen standard value.
+
+```r
+chicago_mutated <- mutate(chicago_mutated, diff_standard = ozone - 0.075)
+head(chicago_mutated, 3)
+```
+
+### Something Missing? Transmute
+
+`transmute()` operates similarly to `mutate()`, but its main gig is returning only the new columns. Let's experiment.
+
+```r
+chicago_transmuted <- transmute(chicago_air, ozone_lag1 = lag(ozone, n = 1), 
+                                diff_standard = ozone - 0.075)
+head(chicago_transmuted, 3)
+```
+
+Want to include an existing column in the result? Just add it as a parameter.
+
+```r
+chicago_transmuted <- transmute(chicago_air, date, ozone, lag1 = lag(ozone, n= 1))
+head(chicago_transmuted, 3)
+```
+
+```card:info
+`mutate()` and `transmute()` ultimately allow you to create and add calculated columns to your data. This tends to come in handy when you're trying to generate or extract more insights from your data.
+```
+
+## Reshaping Your Data with Pivot Functions
+
+We're getting somewhere, but our data isn't quite ready for some types of analyses or visualizations. Many functions work best with data in a "long" format, where each row is an observation and columns are variables. However, our current dataset might be described as "wide", where each row is an observation but variables are spread out as columns. Let's explore two game-changers: `pivot_longer()` and `pivot_wider()`.
+
+### Going Long with pivot_longer()
+
+The `pivot_longer()` function in the `tidyr` package will help transform our data from a wide format to a longer version. 
+
+```r
+library(tidyr)
+chicago_long <- pivot_longer(chicago_air, cols = ozone:pressure, 
+                             names_to = "parameter", values_to = "value")
+head(chicago_long, 3)
+```
+
+One key reason to transform your data to a longer format is that it often simplifies the process of plotting with `ggplot()` since each data point in your visual corresponds to a row in your data.
+
+```r
+library(ggplot2)
+ggplot(chicago_long, aes(date, value)) + geom_point() + 
+  facet_grid(parameter ~., scales = "free")
+```
+
+### Going Wide with pivot_wider()
+
+Sometimes the long data format is not right for our analysis and we need to revert back to the wide format. We can do just that using `pivot_wider()`.
+
+```r
+chicago_wide <- pivot_wider(chicago_long, names_from = parameter,
+                            values_from = value)
+head(chicago_wide, 3)
+```
+
+```card:info
+Knowing how to switch between long and wide data formats using `pivot_longer()` and `pivot_wider()` gives you increased versatility in your data analysis tasks.
+```
+
+## Grab Bag of dplyr and tidyr Functions
+
+Here's a lightning-round session on some additional helpful functions from the dplyr and tidyr packages. All these examples will make use of the pipe operator `%>%` which is used to chain together sequences of functions.
+
+### Cool dplyr Functions
+
+- `distinct()`: Get distinct values from a data frame.
+
+```r
+chicago_long %>%
+  select(parameter) %>%
+  distinct()
+```
+
+- `slice()`: Select rows using a numeric vector.
+
+```r
+chicago_air %>%
+  slice(1:5)
+```
+
+- `slice_sample()`: Select a certain number of rows randomly.
+
+```r
+chicago_air %>%
+  slice_sample(n = 5)
+```
+
+- `pull()`: Get a column from the data frame as a vector.
+
+```r
+ozone <- chicago_air %>%
+  pull(ozone)
+head(ozone)
+```
+
+### nifty tidyr Functions
+
+- `separate()`: Separate a column into multiple columns using a delimiter.
+
+```r
+# generate example
+combined_site <- chicago_aqs %>%
+  transmute(Site_ID = paste(State_Code, County_Code, Site_Number, POC, sep = "-"),
+            Date_Local, Parameter_Code, AQI)
+head(combined_site, 3)
+```
+
+```r
+# split the combined site id
+split_site <- combined_site %>%
+  separate(Site_ID, c("state", "county", "site", "poc"), sep = "-")
+head(split_site, 3)
+```
+
+- `replace_na()`: Replace `NA` values in a data frame with a specific value.
+
+```r
+df <- data.frame(day = 1:5, count = c(NA, 4, 6, 2, 1), type = c("a", "b", NA, "a", "b"))
+df
+```
+
+```r
+df %>%
+  replace_na(list(count = 0, type = "unknown"))
+```
+
+- `expand_grid()`: Makes a data grid out of all possible combinations of the input vectors.
+
+```r
+sites <- c(1:3)
+dates <- seq(as.Date("2023-01-01"), as.Date("2023-01-05"), by = 1)
+expand_grid(sites, dates)
+```
+
+```card:info
+These are just some handy tools you can use in your data manipulation journey. Remember, the more functions you have in your arsenal, the better equipped you'll be to tackle various data-related challenges.
+```
+
+# Challenges
+
+Let's put our understanding of these concepts to a test. Here are a few exercises:
+
+1. Using `mutate()`, create a column in `chicago_air` that calculates the difference between the actual temperature (`temp`) and the standard room temperature, which we'll assume to be 25 degree Celsius.
+
+```exercise
+? Using `mutate()`, create a column in `chicago_air` that calculates the difference between the actual temperature (`temp`) and the standard room temperature, which we'll assume to be 25 degree Celsius.
+! chicago_standard_temp <- mutate(chicago_air, temp_diff = temp - 25)
+- Hint 1: Use the `mutate()` function.
+- Hint 2: Be sure to assign the operation back to a dataframe.
+* The `mutate()` function enables to us to perform calculations on a column (in this case, `temp`) and add the result as a new column (`temp_diff`) in our dataframe.
+```
+
+2. Use the `pivot_longer()` function to reshape the `chicago_air` dataframe such that the columns `ozone, temp, pressure` are transformed to rows.
+
+```exercise
+? Use the `pivot_longer()` function to reshape the `chicago_air` dataframe such that the columns `ozone, temp, pressure` are transformed to rows.
+! chicago_long <- pivot_longer(chicago_air, cols = ozone:pressure, names_to = "parameter", values_to = "value")
+- Hint 1: Remember to specify the columns you want to transform to rows.
+- Hint 2: Don't forget to define column names for the reshaped data.
+* By using, `pivot_longer()`, we can pivot our data from a wide to long format. This can often be useful in different stages of data manipulation, visualization or analysis.
+```

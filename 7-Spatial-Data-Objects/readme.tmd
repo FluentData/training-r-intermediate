@@ -1,0 +1,87 @@
+# Working with Spatial Data Objects
+
+In this lesson, we will explore several R packages developed for visualizing and analyzing spatial data. The primary focus is on the `sp` package that creates spatial objects, and how we can manipulate and visualize these objects. The following topics will be covered:
+
+* Understanding the `sp` package and spatial objects.
+* Working with SpatialPoints objects and SpatialPointsDataFrame objects.
+* Plotting spatial data.
+
+## The `sp` Package and Spatial Objects
+
+Object-oriented programming allows us to store spatial information and associated data in comprehensive and stable objects. These objects can then be utilized in functions that visualize and analyse the object's content.
+
+The `sp` package is a fundamental tool in dealing with spatial data, providing classes and methods for carving S4 objects in R. The package enables the creation of basic spatial objects that contain information for a boundary box and the coordinate system.
+
+### Exercise
+
+```exercise
+? Write a function to create a basic `Spatial` object given longitude, latitude, and projection details.
+! create_spatial_object <- function(long_star, long_end, lat_star, lat_end, projection){
+          require(sp)
+          bbox <- matrix(c(long_star, long_end, lat_star, lat_end), nrow=2, byrow = TRUE, dimnames = list(NULL, c("min", "max")))
+          proj <- CRS(projection)
+          sp_obj <- Spatial(bbox = bbox, proj4string = proj)
+          return(sp_obj)
+      }
+- Hint 1: Remember to import the sp package.
+- Hint 2: The matrix representing the bounding box should have rows with names min and max.
+* This function takes the starting and ending longitudes and latitudes and the projection as input and uses the Spatial function from the sp package to create a Spatial object which it then returns.
+```
+
+## SpatialPoints
+
+The `SpatialPoints` object is a subclass of `Spatial` object. It is particularly useful because it represents locations (points) in the spatial data. We commonly use monitor locations with this object. We can filter and transform data based on different projections.
+
+### Exercise 
+
+```exercise
+? Explain the importance and relevance of projections when dealing with spatial data
+! The projection of spatial data describes how the three-dimensional geographic space has been represented in two dimensions. Different projections treat scale distortion, area, distance, direction, and shape differently. Properly handling projections in spatial data is a crucial step in spatial data analysis.
+- Hint 1: Keep in mind how 3D space is represented in 2D.
+- Hint 2: What aspects are affected by projections?
+* Spatial data fundamentally maps the 3-dimensional world onto a 2-dimensional representation. Therefore, it's impossible to retain all properties of the geographic space perfectly. Different projections will preserve and distort different aspects such as area, direction, distance, or shape. The choice of projection can impact the results of your analysis, so it's crucial to understand and correctly handle projections when working with spatial data.
+```
+
+## SpatialPointsDataFrame 
+
+In many instances, we may want to have data associated with each point. `SpatialPointsDataFrame` object is perfect for this as it also contains a data frame of values associated with the coordinate points.
+
+## Plotting
+
+Visualizing `Spatial*` objects is a simple task with many plotting functions available in R. You can use different shapes, colors, and sizes based on values of other variables.
+
+### Exercise 
+
+```exercise
+? Summarize the differences between SpatialPoints and SpatialPointsDataFrame objects.
+! SpatialPoints only represents the locations of points of interest on the map by containing the coordinates of these points. On the other hand, SpatialPointsDataFrame is an extension of SpatialPoints. Along with representing locations of points of interest, it also contains a data frame that has metadata or any associated attributes for each of these points.
+- Hint 1: Consider the additional ability of SpatialPointsDataFrame compared to  SpatialPoints.
+- Hint 2: What does the data frame in SpatialPointsDataFrame represent?
+* SpatialPoints only contains information about the locations (i.e., the coordinates) of the points. However, SpatialPointsDataFrame not only has these points' locations but also contains additional data attributes for each point. The metadata is linked via the row names, i.e., the row names in the @data slot correspond to the row.names of the coordinates in the @coords slot.
+```
+
+## Challenges
+
+Now it's time to apply what you've learned. Try these challenges to refine your understanding of spatial data.
+
+### Exercise 
+
+1. 
+
+```exercise
+? Create a SpatialPoints object for your hometown using appropriate longitude and latitude values.
+! hometown_spoints <- SpatialPoints(coords = matrix(c(longitude, latitude), nrow = 1), proj4string = CRS("<appropriate projection>"))
+- Hint 1: You need to replace the values for longitude, latitude, and the projection string with appropriate values.
+- Hint 2: Use the `SpatialPoints` function from the `sp` package.
+* After replacing `longitude`, `latitude`, and `<appropriate projection>`, this function creates a SpatialPoints object for the specified latitude and longitude coordinates with the given projection.
+```
+
+2. 
+
+```exercise
+? If we have two datasets of monitor locations, one in WGS84 and another in NAD83, can we directly compare these two datasets? Explain.
+! No, we cannot directly compare these two datasets. They use different coordinate reference systems (CRS - WGS84 and NAD83), so their coordinates represent different points on the Earth. To compare the datasets directly, we must first convert them to the same CRS using the `spTransform()` function.
+- Hint 1: Remember the transformations we can make between different projections.
+- Hint 2: Consider what the coordinates in a dataset represent.
+* In spatial analysis, all measurements and data points are tied to a specific Coordinate Reference System (CRS). If two datasets use different CRS (like WGS84 and NAD83), their coordinates cannot be directly compared as they represent different points on Earth. To compare such datasets, one must convert them to the same CRS using functions like `spTransform()`.
+```

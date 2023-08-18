@@ -1,0 +1,121 @@
+<!-- Lesson Revision -->
+
+# Custom Functions
+
+In this tutorial, we will explore how to create tailored functions in R that are designed to work seamlessly within the tidyverse. The following topics will be covered:
+
+- Writing custom functions
+- Creating mutate functions
+- Developing summarise functions
+- Crafting data frame functions
+
+Let's dive in!
+
+## Writing functions
+
+We're no rookies to using functions in R - we've used several built-in functions, such as `mean()`. Now, let's explore how to create our custom functions. We'll commence by generating our version of a function to calculate the mean of a numeric vector, guided by the basic structure of creating a custom function.
+
+```r
+my_mean <- function(numbers){
+  sum(numbers) / length(numbers)
+}
+```
+
+Above, `numbers` is the input parameter for our function, and the code within the curly braces handle the computation. In this case, we calculate the average of the values in `numbers`.
+
+Let's test our function and compare it with the built-in R `mean` function.
+
+```r
+my_vector <- c(1, 3, 5, 2, 6, 9, 0)
+vector_mean <- my_mean(numbers = my_vector)
+vector_mean
+```
+
+```r
+mean(my_vector)
+```
+
+Provided the same input, both functions would yield the same results.
+
+## Mutate functions
+
+In handling data frames, we often need to create new columns. Functions that work well with `mutate()` take a vector as the first argument and return a vector of the same length. This maintains the integrity of the data frame structure.
+
+Consider a function that converts temperatures from Fahrenheit to Celsius.
+
+```r
+convert_temp <- function(temp_value) {
+  
+  (temp_value - 32) * (5 / 9) 
+  
+}
+```
+
+This `convert_temp()` function comes in handy when querulously faced with Fahrenheit figures that would make more sense in Celsius.
+
+```exercise
+? Create a version of the convert_temp() function that takes a `unit` parameter and uses it to determine whether to convert the temperature to Celsius or Kelvin.
+! convert_temp <- function(temp_value, to = c("celcius", "kelvin")) {
+  
+  if(to == "celcius") {
+    (temp_value - 32) * (5 / 9)
+  } else if(to == "kelvin") {
+    (temp_value - 32) * (5 / 9) + 273.15
+  } else {
+    stop("Currently this function only converts from Fahrenheit to Celcius or Kelvin")
+  }
+ 
+}
+- Hint: Use if else conditions to calculate the temperature in the chosen unit. Use the stop() function to display a message if an invalid unit is passed.
+* This function now caters to both Celsius and Kelvin conversions, providing an error message for unsupported conversions. 
+```
+
+## Summarise functions
+
+Summarise functions contract a vector of values into a single value and are particularly suited for use with the `summarise()` function from `dplyr`. For instance, a function that takes a vector of ozone values in ppm and provides the count of those values exceeds the standard of 0.070 ppm.
+
+```r
+standard_exceedances <- function(concentration) {
+  sum(concentration > 0.070)
+}
+```
+
+Using the `standard_exceedances` function in combination with `group_by()` and `summarise()`, we can calculate the number of days in each month that there was an exceedance of the standard value.
+
+```r
+chicago_grouped <- group_by(chicago_air, month)
+chicago_exceedances <- summarise(chicago_grouped, 
+                                 ozone_exceedances = standard_exceedances(ozone))
+```
+
+## Data frame functions
+
+Data frame functions take a data frame as the first parameter and return a data frame. This allows for a smooth flow of data that is compatible with pipes.
+
+As an application example, we might desire to summarize daily 1-hour maximum ozone for the year as a common operation whenever we receive new data in the same format.
+
+```r
+summarise_ozone <- function(ozone_df, ozone_column) {
+  ozone_df %>%
+    summarise(first_03_max = max({{ozone_column}}, na.rm = TRUE),
+              second_03_max = sort({{ozone_column}}, decreasing = TRUE)[2],
+              third_03_max = sort({{ozone_column}}, decreasing = TRUE)[3],
+              fourth_03_max = sort({{ozone_column}}, decreasing = TRUE)[4])
+}
+```
+
+The {{ }} notation allows for the passing of a column name without quotes, and the function itself can handle data frames that have been grouped using `group_by()` function.
+
+# Challenges
+
+1. Can you modify the `summarise_ozone()` function above to optionally compute the mean, min, and max ozone values and provide these in the returned data frame?
+
+2. Write a function that takes a vector of numeric values and calculates the z-score for each. Test your function by passing a vector of values and checking that it returns the correct z-scores. 
+
+```exercise
+? Modify the `summarise_ozone()` and write a function for calculating z-score.
+- Hint 1: For the `summarise_ozone()` task, include calculation for mean, min and max within the existing compute steps.
+- Hint 2: For the z-score function, remember that the z-score for a value subtracts the mean of the distribution from the value and divides by the standard deviation of the distribution. 
+- Hint 3: Use the `mean()` function to calculate mean and `sd()` to calculate the standard deviation.
+* Make sure your z-score function takes a numeric vector as input and returns a numeric vector of the same length.
+```

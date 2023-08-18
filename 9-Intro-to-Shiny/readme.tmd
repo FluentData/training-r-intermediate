@@ -1,0 +1,132 @@
+# Introduction to Shiny Applications
+
+Shiny, an R package by RStudio, lets you create interactive graphs in your very own fully-operational web app. If you wish to go further into Shiny, RStudio has created a comprehensive [tutorial](http://shiny.rstudio.com/tutorial/) to help you explore this package. This tutorial doesn't assume any previous knowledge of Shiny but encourages you to take advantage of RStudio's plentiful resources. 
+
+```card:info
+For creating a Shiny app, ensure you have two `.R` scripts in the same folder:  ui ('User-Interface') script and a server script.
+```
+
+## Understanding the `ui.R` Script
+
+The `ui.R` script outlines the look and layout of your app. Here, we'll examine the `ui.R` script from the **Hello Shiny** example provided in RStudio's tutorial.
+
+```{r, eval=FALSE}
+library(shiny)
+
+# Define UI for application that draws a histogram
+shinyUI(fluidPage(
+
+  # Application title
+  titlePanel("Hello Shiny!"),
+
+  # Sidebar with a slider input for the number of bins
+  sidebarLayout(
+    sidebarPanel(
+      sliderInput("bins",
+                  "Number of bins:",
+                  min = 1,
+                  max = 50,
+                  value = 30)
+    ),
+
+    # Show a plot of the generated distribution
+    mainPanel(
+      plotOutput("distPlot")
+    )
+  )
+))
+```
+
+## The `server.R` Script
+
+In `server.R`, you'll place the code that brings your app to life.
+
+```{r, eval=FALSE}
+library(shiny)
+
+# Define server logic required to draw a histogram
+shinyServer(function(input, output) {
+
+  output$distPlot <- renderPlot({
+    x    <- faithful[, 2]  # Old Faithful Geyser data
+    bins <- seq(min(x), max(x), length.out = input$bins + 1)
+
+    # draw the histogram with the specified number of bins
+    hist(x, breaks = bins, col = 'darkgray', border = 'white')
+  })
+})
+```
+
+## Deploying the App Locally
+
+Use the `runApp()` function to launch an app locally. You can run the **Hello Shiny** app like this, considering that the `ui.R` and `server.R` scripts can be found in the `shiny` library.
+
+```{r, eval=FALSE}
+folder <- system.file("examples/01_hello", package="shiny")
+
+runApp(appDir = folder)
+```
+
+## Exercise: Explore Chicago Air Quality
+
+Let's create a simple app utilizing the `chicago_air` dataset and get familiar with making Shiny apps.
+
+```exercise
+? Create a Shiny App using the `chicago_air` dataset. This app will create time series plots for selected parameters.
+! 
+- UI Part:
+```{r, eval=FALSE}
+library(shiny)
+
+shinyUI(fluidPage(
+
+  titlePanel("Chicago Air"),
+
+  sidebarLayout(
+    sidebarPanel(
+      selectInput("parameter", "Select Parameter:", c("Ozone" = "ozone", "Temperature" = "temp", "Solar Radiation" = "solar"))
+    ),
+
+    mainPanel(
+      plotOutput("timePlot")
+    )
+  )
+))
+```
+- Server Part:
+```{r, eval=FALSE}
+
+library(shiny)
+library(region5air)
+data(chicago_air)
+chicago_air$date <- as.Date(chicago_air$date)
+
+shinyServer(function(input, output) {
+  
+  output$timePlot <- renderPlot({
+    ggplot(chicago_air, aes_string("date", input$parameter)) + geom_line() 
+  })
+})
+```
+To run this app, ensure you have both `ui.R` and `server.R` scripts in a folder named 'ChicagoApp' in your working directory. Then use the `runApp()` function like so:
+
+```{r, eval=FALSE}
+runApp("ChicagoApp")
+```
+- Hint 1: The `ui.R` script defines the user-interface and layout of the app.
+- Hint 2: The `server.R` script contains the logic to create and update the app based on user input.
+* This exercise will give you a basic working knowledge of creating a Shiny app. You're creating a time-series plot for a given parameter using data from the `chicago_air` dataset.
+```
+
+# Challenges
+
+Try extending the Chicago Air Quality Shiny app to include more parameters or features. Some suggestions to consider:
+
+1. Include an option to display data as a scatter plot, in addition to the line plot.
+2. Allow the user to select a date range for the data.
+
+```exercise
+? Extend the `ChicagoApp` Shiny app to include at least one additional parameter or feature as per your preference.
+! Solutions will vary.
+* Extending the Shiny app allows for a more detailed analysis, providing versatile options for the user.
+```

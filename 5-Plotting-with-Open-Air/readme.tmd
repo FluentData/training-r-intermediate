@@ -1,0 +1,109 @@
+# Plotting with `openair`
+
+The [`openair` package](https://davidcarslaw.github.io/openair/) is a highly effective tool for plotting air pollution monitoring data. Our tutorial provides a swift introduction to its core functions and their usage.
+
+```card:info
+Your data needs to be in a specific format for the `openair` package. You'll need a data frame with a date/time column named 'date'. 'ws' is for wind speed and 'wd' is wind direction. You can find more details in the [openair documentation](https://bookdown.org/david_carslaw/openair/sections/intro/openair-package.html).
+```
+
+We'll use `chicago_air` and `chicago_wind` data frames from the `region5air` package. We'll load them and then rename the columns to meet `openair` requirements.
+
+```{r}
+library(region5air)
+library(dplyr)
+data(chicago_air)
+data(chicago_wind)
+
+chicago_wind <- rename(chicago_wind, ws = wind_speed, wd = wind_direction, date = datetime)
+```
+
+## `summaryPlot`
+
+The `summaryPlot()` is your one-click analytics function. It returns a plot displaying the data over time accompanied by details such as minimum, maximum, and mean values, along with a histogram.
+
+```r
+library(openair)
+summaryPlot(select(chicago_air, date:pressure))
+```
+
+The graph's first column holds time series plots of each data frame column. Red bars at the bottom of each panel mark missing data. Panels on the right offer histograms for parameter distributions.
+
+## `windRose`
+
+The `windRose()` function visualizes wind direction and speed. The plot displays spokes indicating wind direction frequency, with color indicating speed.
+
+```r
+windRose(chicago_wind, key.footer = "knots") # default is m/s
+```
+
+The function also allows data division into time periods using the `type` argument. A type of `"weekday"` would create seven plots, one for each week's day.
+
+```r
+windRose(chicago_wind, type = "weekday", key.footer = "knots")
+```
+
+## `pollutionRose`
+
+The `pollutionRose()` function lets us look into pollutant concentrations concerning wind direction.
+
+```r
+pollutionRose(chicago_wind, pollutant = "ozone")
+```
+
+The function also supports value division by time periods.
+
+```r
+pollutionRose(chicago_wind, pollutant = "ozone", type = "month")
+```
+
+## `timePlot`
+
+`timePlot()`, as the name suggests, generates time series plots. The `pollutant` parameter identifies the variables to be plotted, with `y.relation` set to `"free"` enabling each series to have its scale.
+
+```r
+timePlot(chicago_air, pollutant = c("ozone", "temp", "pressure"),
+         y.relation = "free")
+```
+
+You can also normalize all values and group them into one plot. This next graph plots the average for each month, normalized to the series' first day, 2021-01-01.
+
+```r
+timePlot(chicago_air, pollutant = c("ozone", "temp", "pressure"),
+         avg.time = "month", 
+         normalise = "1/1/2021", lwd = 4, lty = 1,
+         group = TRUE)
+```
+
+## `calendarPlot`
+
+Lastly, `calendarPlot()` presents daily values in a calendar format.
+
+```r
+calendarPlot(chicago_air, pollutant = "ozone")
+```
+
+```r
+calendarPlot(chicago_wind, pollutant = "ozone", annotate = "ws")
+```
+
+## Recap
+
+In this tutorial, you learned how to use popular `openair` package functions to generate meaningful plots for pollutant data. Remember, the key is to correctly prep your data before jumping into it.
+
+## Challenges
+
+Let's consolidate your learning through these challenging tasks.
+
+```exercise
+? Generate a `summaryPlot` for temperatures and pressures recorded in data 'chicago_wind'. Be sure to select the correct columns for this task.
+! summaryPlot(select(chicago_wind, date:pressure))
+- Hint 1: Check the 'summaryPlot' function documentation for more details.
+* The 'summaryPlot' function creates a comprehensive visualization with necessary statistics and missing data points.
+```
+
+```exercise
+? Use the `calendarPlot` function to depict 'ozone' values and annotate with wind speed from 'chicago_wind'. 
+! calendarPlot(chicago_wind, pollutant = "ozone", annotate = "ws")
+- Hint 1: Remember, you can annotate additional features using the 'annotate' argument.
+* 'calendarPlot' excellently represents daily values in a more intuitive form - a calendar. You can enhance visualization by annotating other important data points.
+```

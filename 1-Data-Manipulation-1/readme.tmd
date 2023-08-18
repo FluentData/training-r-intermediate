@@ -1,0 +1,114 @@
+# Data Manipulation Part 1: dplyr
+
+Welcome to this initial tutorial on data manipulation using the `dplyr` package in R. This tutorial will ease you into the commonly used functions in the `dplyr` package created by noted statistician and R developer [Hadley Wickham](http://had.co.nz/).
+
+Here's what we'll learn:
+
+1. `select()`: Select specific columns from a dataframe.
+2. `arrange()`: Reorder the rows in your dataframe.
+3. `filter()`: Filter out specific rows based on certain criteria.
+4. `summarise()`: Summarize your data by creating new variables.
+
+Let's get started!
+
+```r
+# Load required packages
+library(dplyr)
+library(region5air)
+
+# Load dataset
+data(chicago_aqs)
+```
+
+Our primary dataset for this tutorial is `chicago_aqs`, a collection of air monitoring data from Chicago obtained from [AQS](https://aqs.epa.gov/aqsweb/airdata/download_files.html). 
+
+We'll look at how both base R and dplyr perform each operation, and how dplyr simplifies the process.
+
+## Select columns with `select()`
+
+```r 
+# Base R Method
+p_base <- chicago_aqs[, c("Site_Number", "Parameter_Name", "Date_Local", "First_Maximum_Value")]
+
+# dplyr Method
+p_dplyr <- select(chicago_aqs, Site_Number, Parameter_Name, Date_Local, First_Maximum_Value)
+```
+
+The `select()` function allows you specify the names of the columns you want to select, in plain text, as arguments.
+
+```r
+# Selecting a Range of Columns
+p_dplyr_range <- select(chicago_aqs, Site_Number:Longitude)
+```
+
+You can also select a range of consecutive columns using a colon.
+
+## Arrange rows with `arrange()`
+
+```r
+# Base R Method
+ordered_base <- chicago_aqs[order(chicago_aqs$Site_Number, chicago_aqs$Date_Local), ]
+
+# dplyr Method
+ordered_dplyr <- arrange(chicago_aqs, desc(Site_Number), Date_Local)
+```
+The `arrange()` function in `dplyr` simplifies arranging data, and you can easily switch to descending order with `desc()`.
+
+## Filter rows with `filter()`
+
+```r
+# Base R Method
+logical_vector <- chicago_aqs$Parameter_Code == 42401 & chicago_aqs$POC == 1
+filtered_base <- chicago_aqs[logical_vector, ]
+
+# dplyr Method
+filtered_dplyr <- filter(chicago_aqs, Parameter_Code == 42401, POC == 1)
+```
+`filter()` can use logical expressions directly, and commas are interpreted as logical AND statements.
+
+## Summarize rows with `group_by()` and `summarise()`
+
+```r
+# Base R Method
+max_value_base <- tapply(chicago_aqs$First_Maximum_Value, chicago_aqs$Parameter_Name, max)
+
+# dplyr Method
+summarised <- chicago_aqs %>%
+  group_by(Parameter_Name) %>%
+  summarise(max_value = max(First_Maximum_Value))
+```
+
+`group_by()` and `summarise()` are powerful `dplyr` functions that make data summarization a breeze. In the `dplyr` method, `group_by()` is used to specify grouping variables and `summarize()` applies aggregation functions to each group.
+
+## Using Pipes in `dplyr`
+
+In the R universe, pipes are tools that let you streamline your code by eliminating the need for saving intermediate variables. You simply pass data from one function to the next using the `%>%` operator. 
+
+```r
+# Simplified dplyr Summarisation with Pipes
+summarised_pipe <- chicago_aqs %>%
+  group_by(Parameter_Name) %>%
+  summarise(max_value = max(First_Maximum_Value))
+```
+
+Pipes can, at first, be a bit tricky to grasp. However, they become effective weapons in your coding arsenal once you get the hang of them. They help write more readable and clean code, while being widely recognized in the R community.
+
+# Wrapping Up
+
+In this tutorial, we ventured into the world of `dplyr`, a powerful and user-friendly package for data manipulation in R. Each function we learned today has a distinctive role:
+
+- `select()` is for picking the columns you want.
+- `arrange()` allows you to reorder rows.
+- `filter()` helps keep the rows you need.
+- `summarise()` let's you create new aggregated variables.
+
+In the end, we learnt about the power of `pipes` to simplify and streamline code.
+
+## Challenges
+
+Ready to test your skills? Here are some challenges for you.
+
+1. Using `chicago_aqs` dataset, select columns from "Site_Number" to "Parameter_Name" and filter for rows where the Site_Number is 4002. Arrange the resulting data in ascending order of Date_Local.
+2. Group the `chicago_aqs` dataset by "Sample_Duration" and find the mean of "First_Maximum_Value " for each group.
+
+**_Note:_** Use custom markdown exercise feature to write solutions and hints for these challenges in your actual materials.

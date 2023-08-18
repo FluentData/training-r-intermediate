@@ -1,0 +1,123 @@
+# Merging Data Frames 
+
+This lesson will teach you how to merge data frames and execute other database-like operations on data frames using `dplyr`. You will learn about:
+
+1. Mutating joins with `inner_join()`, `left_join()`, and `full_join()`
+2. Filtering joins with `semi_join()` and `anti_join()`
+3. Manipulating individual rows with `rows_insert()`, `rows_update()`, and `rows_upsert()`.
+
+First, let's load necessary packages and datasets.
+
+```r
+library(region5air)
+library(dplyr)
+
+data(chicago_aqs)
+data(aqs_parameters)
+```
+## Setting up the Data 
+
+We will work with simplified versions of the data frames `chicago_aqs` and `aqs_parameters` from the `region5air` package. Let's create two new data frames for our operations.
+
+1. `sites`: contains minimal information about each site from the `chicago_aqs` data set.
+
+```r
+sites <- chicago_aqs %>%
+  group_by(Site_Number, Parameter_Code) %>%
+  summarise(Max_Value = max(First_Maximum_Value))
+
+sites
+```
+
+2. `parameters`: contains a subset of information about criteria gases from the `aqs_parameters` data set.
+
+
+# Mutating Joins
+
+Mutating joins are similar to SQL's `INNER JOIN`, `LEFT JOIN`, and so on. We join two data frames based on matching values in one or more columns they have in common. In our case, `Parameter_Code` is the common column.
+
+
+```r
+colnames(sites)
+colnames(parameters)
+```
+
+**(Optional challenge)**: Can you identify other columns that these data frames might have in common?
+
+### Inner Join
+
+Using `inner_join()`, let's combine these data frames and only retain the information shared by both in the `Parameter_Code` columns. 
+
+```r
+inner_join(sites, parameters, by = "Parameter_Code")
+```
+
+### Left Join
+What if we wanted to keep all the rows in the `sites` data frame, regardless of whether their `Parameter_Code` appears in the `parameters` data frame? We can use `left_join()`. The first data frame supplied will keep all its rows in the output.
+
+```r
+left_join(sites, parameters, by = "Parameter_Code")
+```
+
+### Full Join
+
+And if we want to keep all records from both data frames in the output, we can use `full_join()`.
+
+```r
+full_join(sites, parameters, by = "Parameter_Code")
+```
+
+# Filtering Joins
+
+Sometimes, we do not want to merge two data frames but rather filter rows in one data frame based on the records in another. For that, we use `semi_join()` and `anti_join()`. 
+
+```exercise
+? Can you guess what `semi_join()` and `anti_join()` do?
+! semi_join() filters the first data frame to only include rows with matching values in the second data frame. anti_join() does the opposite, excluding rows from the first data frame if their values match in the second.
+- Hint: Think about what "semi" and "anti" mean.
+- Hint: Try running the functions and see what returns.
+* semi_join() and anti_join() help us filter rows in one data frame based on whether their values exist or do not exist in another data frame, respectively.
+```
+
+# Manipulating Individual Rows
+
+Let's explore how to manipulate values within an existing data frame, similar to the `UPDATE` and `INSERT` operations in SQL.
+
+### Insert 
+
+The `rows_insert()` function inserts new rows into an existing data frame.
+
+```r
+new_parameter <- data.frame(Parameter_Code = 11204, Parameter = "Smoke")
+
+rows_insert(parameters, new_parameter, by = "Parameter_Code")
+```
+
+### Update 
+
+The `rows_update()` function updates existing values in a data frame.
+```r
+co_parameter <- data.frame(Parameter_Code = 42101, Parameter = "CO")
+
+rows_update(parameters, co_parameter, by = "Parameter_Code")
+```
+
+### Upsert 
+
+The `rows_upsert()` function either inserts new values or updates existing ones, depending on whether the key value exists.
+ ```r
+upsert_parameters <- data.frame(Parameter_Code = c(11204, 42101),
+                                Parameter = c("Smoke", "CO"))
+
+rows_upsert(parameters, upsert_parameters, by = "Parameter_Code")
+``` 
+
+# Challenges 
+
+1. Create a new data frame that includes all records from both `sites` and `parameters` data frames based on the `Parameter_Code` column. Which function would you use for this?
+2. Add a new parameter to the `parameters` data frame. Use `rows_insert()` for that.
+3. Update the Parameter name "Ozone" to "O3" in the `parameters` data frame. Which function would you use? 
+4. Create a data frame that excludes the records in `sites` that have `Parameter_Code` values present in `parameters`.
+5. Suppose you have a data frame with both new parameter names and updates to existing ones. How would you apply those changes to the `parameters` data frame? What function would you use?
+
+Be sure to test your solutions!

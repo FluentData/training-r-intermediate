@@ -1,0 +1,83 @@
+# Space-Time Data In R
+
+In the world of R, there are many objects that capture various dimensions of data. In a previous tutorial, we journeyed through creating `Spatial*` objects using the `sp` package that are excellent for storing information about points in space. However, these objects didn't have the ability to reflect changes in those points *over time*. 
+
+Forward a couple of light-years into the *space-time continuum* and we'll uncover `ST*` objects that allow us to store spatial and time data simultaneously. And no, this doesn't involve theoretical physics, but the `spacetime` package in R!
+
+Let's rocket into this stratospheric tutorial, covering:
+- [`ST*` Objects](#ST) - What they are and how to create them
+- [Plotting](#plotting) - How to represent them visually
+- [Interpolation](#interpolation) - How you can derive new points from those you have
+
+
+## Set Course For `ST*` Objects{#ST}
+
+In the cosmos of the `spacetime` package, `ST` objects are the stars around which other celestial elements orbit. These objects hold the blueprints of spatial information (just like `SpatialPoints` objects) as well as temporal intervals. Thus, an `ST` object represents points not just in space, but in time as well!
+
+Let's strap in and witness the creation of a simple `ST` object:
+
+```{r, warning=FALSE}
+library(sp)
+library(spacetime)
+dates <- as.Date('2008-01-01')+1:2
+my_matrix <- cbind(c(0,1),c(0,1))
+spatial_points <- SpatialPoints(my_matrix)
+ST(sp = spatial_points, time = dates, endTime = delta(dates))
+```
+In the `ST` function, `delta()` serves as our trusty sidekick, acting as a radar to find `endTime` for regularly spaced time intervals. In this case, it detects each day as a full day's duration. 
+
+This `ST` object, like a spaceship, is the foundation for more elaborate objects representing data in space and time within a full grid layout (`STF` objects), a sparse grid layout (`STS` objects), an irregular layout (`STI` objects), and a trajectory layout (`STT` objects). 
+
+For this tutorial, our focus will be on the `STF` layout (*Space-Time-Full*), the most valuable crew member for dealing with monitoring data.
+
+Before we create an `STFDF` object (**S**pace **T**ime **F**ull-grid-layout **D**ata **F**rame), let's refine our data, focusing on three monitors and four time intervals for 1-hour ozone:
+
+```{r, warning=FALSE, message=FALSE}
+library(region5air)
+library(dplyr)
+
+data(airdata)
+as.tbl(airdata)
+airdata$datetime <- as.POSIXct(airdata$datetime, tz = "US/Central", format = "%Y%m%dT%H%M")
+monitors <- unique(airdata$site)[1:3]
+air <- filter(airdata, parameter == 44201, site %in% monitors)
+air <- group_by(air, site, datetime)
+air <- filter(air, poc == min(poc))
+min_time <- as.POSIXct("2013-06-01 11:00:00", tz = "US/Central")
+max_time <- as.POSIXct("2013-06-01 14:00:00", tz = "US/Central")
+air <- filter(air, datetime >= min_time, datetime <= max_time)
+air <- select(air, site, datetime, value, lon, lat, GISDatum)
+air
+```
+With our data prepped and parachutes on, let's glide to the creation of the `STFDF` object using `stConstruct()`:
+
+```{r}
+air <- as.data.frame(air)
+airSTFDF <- stConstruct(air, space = c("lon", "lat"), time = "datetime", crs = CRS("+proj=longlat +ellpsWGS84"))
+airSTFDF
+```
+
+Good to remember: If you leave `endTime` argument blank in `stConstruct()`, it's assumed these are time instances, not durations.
+
+## Unearth The Mysteries of Plotting{#plotting} 
+
+We've scratched the surface of `ST*` objects creation, but how do we represent this data visually? That'll be covered in the next phase of our journey!
+
+## Interpolation Nuggets{#interpolation}
+
+Interpolation is a powerful tool, especially with spatial data. This nugget of wisdom and more will be unearthed in the final chapter of our adventure.
+
+## Challenges 
+
+1. Create an `STFDF` object with your own data.
+2. Construct an `ST*` object using a different layout.
+3. Discover the power of interpolation.
+
+```exercise
+? Create an `STFDF` object with your own data
+! `your-code-here`
+- Hint 1: Remember to convert your data to a data.frame before using `stConstruct()`
+- Hint 2: File not found? check your directory again, maybe the file is somewhere else.
+* `stConstruct()` requires a `data.frame` and accurate column names for spatial and temporal data.
+```
+Now that we've touched on creating `ST*` objects, let's put this knowledge to the test by diving into deep space (aka plotting and interpolation). So strap in, and prepare for blastoff! Remember, we are in the "*Space-Time Continuum*".

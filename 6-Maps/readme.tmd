@@ -1,0 +1,100 @@
+# Mapping In R
+
+This tutorial will take you through multiple ways to create maps in R: basic maps, interactive Google maps, and Leaflet maps. 
+
+It's important to note that base R does not have its own function for displaying maps. We'll need to install and load a package called `maps` for this.
+
+```{r}
+install.packages("maps")
+library(maps)
+```
+
+## Basic Maps
+
+To get started, we'll create a simple map of Indiana using the `map()` function from the `maps` package. This function requires two arguments: a database and regions. For our first basic map, we'll use 'state' as our database and 'Indiana' as our region. 
+
+```{r}
+map(database = 'state', regions = 'indiana')
+```
+
+Now, let's say we also want to plot some monitor points on the map of Indiana. We'll provide a table of monitors with their respective latitude and longitude. 
+
+```r
+monitors <- read.table(header=T, text='
+  monitorid        lat        long   datum                    name            
+          1   41.60668  -87.304729   WGS84              Gary-IITRI
+          2  39.811097	-86.114469   WGS84  Indpls-Washington-Park
+          3  39.749019	-86.186314   WGS84      Indpls-Harding-St.
+          4  38.013248	-87.577856   WGS84  Evansville-Buena-Vista
+          5  39.159383	-86.504762   WGS84             Bloomington
+          6  39.997484  -86.395172   WGS84              Whitestown
+                       ')
+```
+
+To enhance the appearance of our map, we'll transition from a state map to a county map by changing ‘state’ to ‘county’ in the `map()` function, and modify the symbol type and color of the monitor points.
+
+```r{r}
+map(database = 'county', regions = 'indiana')
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+```
+
+Also, we can specify certain counties and add a title to our map.
+
+```{r}
+map(database = 'county', regions = c('indiana,marion', 'indiana,boone'))
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+title(main = "Air Monitor Locations")
+```
+
+## Google Maps
+
+For creating interactive Google maps, we'll use a package called `googleVis`. 
+
+```{r}
+install.packages("googleVis")
+library(googleVis)
+```
+
+To create a Google map with monitor locations, we first need to format the coordinates in `lat:long` format. 
+
+```{r}
+google.location <- paste(monitors$lat, monitors$long, sep = ":")
+monitors.google <- data.frame(monitors, google.location)
+gvisMap(data = monitors.google, locationvar = "google.location", tipvar = "name")
+```
+
+## Leaflet Maps
+
+Another fantastic way to create interactive maps in R is by using the `leaflet` package. 
+
+```{r}
+install.packages("leaflet")
+library(leaflet)
+
+m <- leaflet()
+m <- addTiles(m)
+m <- addMarkers(m, lng=monitors$long, lat=monitors$lat, popup=monitors$name)
+m
+```
+## Challenges
+
+```exercise
+? Can you label the monitor points in the basic map using the text() function?
+! map(database = 'county', regions = c('indiana,marion', 'indiana,boone'))
+points(x = monitors$long, y = monitors$lat, pch = 19, col = 'red')
+text(x = monitors$long, y = monitors$lat, labels = monitors$name, pos = 2)
+- Hint 1: Use the labels argument to specify what should be used as labels. 
+- Hint 2: The pos argument specifies the position of the text with respect to the point; 1=below, 2=left, 3=above, 4=right.
+* The text() function in R helps you label data points on your basic map.
+```
+
+```exercise
+? Can you add tile layers to the leaflet map using the addProviderTiles() function? Try using the "Stamen.TonerLite" provider.
+! m <- leaflet()
+m <- addProviderTiles(m, "Stamen.TonerLite")
+m <- addMarkers(m, lng=monitors$long, lat=monitors$lat, popup=monitors$name)
+m
+- Hint 1: addProviderTiles() function requires two arguments, first the map you are adding the tiles to, and second the provider of the tiles. 
+- Hint 2: "Stamen.TonerLite" is a provider that creates black and white map.
+* The addProviderTiles() function in leaflet allows you to add different tile layers to enhance the beauty and functionality of maps.
+```
